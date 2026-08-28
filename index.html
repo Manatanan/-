@@ -25,16 +25,16 @@
     .custom-card {
       background: #ffffff;
       border-radius: 28px;
-      box-shadow: 0 25px 50px -12px rgba(241, 116, 32, 0.808);
-      border: 1px solid rgb(244, 129, 63);
+      box-shadow: 0 25px 50px -12px rgba(116, 174, 250, 0.808);
+      border: 1px solid rgb(90, 203, 255);
     }
     .btn-gradient {
-      background: linear-gradient(135deg, #f4723f 0%, #f18339 50%, #fcde58 100%);
+      background: linear-gradient(135deg, #003cbd 0%, #65a1fa 50%, #8ccbff 100%);
       box-shadow: 0 10px 20px -5px rgba(225, 29, 72, 0.4);
     }
     .btn-gradient:hover {
       opacity: 0.95;
-      box-shadow: 0 12px 24px -4px rgba(247, 87, 38, 0.836);
+      box-shadow: 0 12px 24px -4px rgba(38, 129, 247, 0.836);
     }
   </style>
 </head>
@@ -101,7 +101,7 @@
     <div class="max-w-7xl mx-auto flex justify-between items-center gap-2">
       <div class="flex items-center gap-3">
         <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
-          🔥 ศูนย์ปฏิบัติการเฝ้าระวังไฟป่า
+         การพัฒนาระบบอัจฉริยะเฝ้าระวัง และตรวจจับไฟป่าด้วยข้อมูลดาวเทียม
         </h1>
         <span class="text-xs md:text-sm bg-rose-800 px-3 py-1 rounded-full text-rose-100 hidden sm:inline-block">
           GISTDA Linked Fire Dashboard
@@ -125,7 +125,7 @@
       <div class="flex items-center justify-between border-b border-indigo-100/60 pb-3">
         <div class="flex items-center space-x-2">
           <div class="w-7 h-7 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-            ✨
+            
           </div>
           <div>
             <h3 class="font-bold text-sm text-slate-800">ระบบ AI วิเคราะห์ทิศทางและคาดการณ์การลุกลามของไฟป่า (AI Predictive Engine)</h3>
@@ -133,7 +133,7 @@
           </div>
         </div>
         <button onclick="fetchGistdaFireData()" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-xs font-medium shadow-md shadow-indigo-100 transition">
-          ⚡ ประมวลผล AI ซ้ำ
+           ประมวลผล AI ซ้ำ
         </button>
       </div>
 
@@ -179,7 +179,7 @@
               สลับไปแผนที่ถนน
             </button>
             <button onclick="fetchGistdaFireData()" class="text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition">
-              🔄 อัปเดตข้อมูล GISTDA
+               อัปเดตข้อมูล GISTDA
             </button>
           </div>
         </div>
@@ -315,7 +315,7 @@
         if (validOfficerCodes.includes(inputCode)) {
           isOfficerLoggedIn = true;
           alert('✅ ยืนยันรหัสเจ้าหน้าที่ถูกต้อง! ปลดล็อกระบบนำทางปฏิบัติการเรียบร้อยแล้ว');
-          statusBadge.innerHTML = '🔰 สถานะ: เจ้าหน้าที่ปฏิบัติการ (ปลดล็อกระบบนำทางแล้ว)';
+          statusBadge.innerHTML = ' สถานะ: เจ้าหน้าที่ปฏิบัติการ (ปลดล็อกระบบนำทางแล้ว)';
           statusBadge.className = 'text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg border border-emerald-400 font-bold';
           closeAuthModal();
           fetchGistdaFireData(); // รีโหลดหมุดเพื่อแสดงปุ่มนำทาง
@@ -369,13 +369,13 @@
       if (isSatellite) {
         map.removeLayer(satelliteLayer);
         streetLayer.addTo(map);
-        btn.innerHTML = '🛰️ สลับไปแผนที่ดาวเทียม';
+        btn.innerHTML = ' สลับไปแผนที่ดาวเทียม';
         btn.className = 'text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition';
         isSatellite = false;
       } else {
         map.removeLayer(streetLayer);
         satelliteLayer.addTo(map);
-        btn.innerHTML = '🗺️ สลับไปแผนที่ถนน';
+        btn.innerHTML = 'สลับไปแผนที่ถนน';
         btn.className = 'text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition';
         isSatellite = true;
       }
@@ -481,13 +481,13 @@
         if (isOfficerLoggedIn) {
           navigationSection = `
             <a href="${googleMapsUrl}" target="_blank" style="display: block; background-color: #E11D48; color: white; text-align: center; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; margin-top: 8px;">
-              🧭 นำทางทีมช่วยเหลือ (Google Maps)
+              นำทางทีมช่วยเหลือ (Google Maps)
             </a>
           `;
         } else {
           navigationSection = `
             <div style="background-color: #F1F5F9; color: #64748B; text-align: center; padding: 8px; border-radius: 6px; font-size: 11px; margin-top: 8px; border: 1px dashed #CBD5E1;">
-              🔒 เฉพาะเจ้าหน้าที่ที่ยืนยันรหัสแล้วเท่านั้น จึงจะใช้งานระบบนำทางได้
+               เฉพาะเจ้าหน้าที่ที่ยืนยันรหัสแล้วเท่านั้น จึงจะใช้งานระบบนำทางได้
             </div>
           `;
         }
