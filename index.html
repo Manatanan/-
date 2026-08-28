@@ -3,58 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> ไฟ ไฟ่ ไฟ้ ไฟ๊  ไฟ๋ ปา ป่า ป้า ป๊า ป๋า (GISTDA Integration)</title>
+  <title>ศูนย์ปฏิบัติการเฝ้าระวังไฟป่า (GISTDA Integration)</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Leaflet CSS (แผนที่) -->
+  <!-- Google Fonts: Kanit -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
+    body { font-family: 'Kanit', sans-serif; }
     #map { height: 530px; width: 100%; }
     .leaflet-popup-content-wrapper { border-radius: 12px; padding: 4px; }
+    
+    /* สไตล์ Modal หน้าต่างเด้ง */
+    .bg-blur-backdrop {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(8px);
+    }
+    .custom-card {
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 25px 50px -12px rgba(241, 116, 32, 0.808);
+      border: 1px solid rgb(244, 129, 63);
+    }
+    .btn-gradient {
+      background: linear-gradient(135deg, #f4723f 0%, #f18339 50%, #fcde58 100%);
+      box-shadow: 0 10px 20px -5px rgba(225, 29, 72, 0.4);
+    }
+    .btn-gradient:hover {
+      opacity: 0.95;
+      box-shadow: 0 12px 24px -4px rgba(247, 87, 38, 0.836);
+    }
   </style>
 </head>
-<body class="bg-slate-50 font-sans">
+<body class="bg-slate-100 min-h-screen flex flex-col justify-between relative">
+
+  <!-- ================= หน้าต่างเด้งเลือกประเภทผู้ใช้งาน (เด้งทันทีที่เปิดหน้าแรก) ================= -->
+  <div id="auth-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-blur-backdrop">
+    
+    <div class="custom-card w-full max-w-lg p-8 md:p-10 text-center relative">
+      
+      <!-- ปุ่มปิด Modal (เพื่อเข้าใช้งานแผนที่ในฐานะประชาชน) -->
+      <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-xl font-bold p-1 transition">
+        ✕
+      </button>
+
+      <!-- Badge ด้านบน -->
+      <div class="inline-block px-4 py-1.5 rounded-full border border-rose-300 bg-rose-50 text-rose-500 text-[11px] font-bold tracking-wider uppercase mb-5">
+        GISTDA LINKED FIRE DASHBOARD
+      </div>
+
+      <!-- หัวข้อหลัก -->
+      <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2 tracking-tight">
+        ศูนย์ปฏิบัติการเฝ้าระวังไฟป่า
+      </h2>
+      <p class="text-slate-400 text-sm mb-7">
+        กรุณาเลือกประเภทบัญชีผู้ใช้งานเพื่อเข้าสู่ระบบ
+      </p>
+
+      <!-- Selector สลับประเภทผู้ใช้งาน -->
+      <div class="bg-rose-50/60 p-1.5 rounded-full flex border border-rose-100 mb-6">
+        <button onclick="selectUserRole('user')" id="tab-role-user" class="flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 bg-white text-rose-600 shadow-sm border border-rose-100">
+          ประชาชนทั่วไป
+        </button>
+        <button onclick="selectUserRole('officer')" id="tab-role-officer" class="flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700">
+          เจ้าหน้าที่ปฏิบัติการ
+        </button>
+      </div>
+
+      <!-- ช่องกรอกรหัสยืนยันเจ้าหน้าที่ (แสดงเฉพาะเมื่อเลือกเจ้าหน้าที่) -->
+      <div id="officer-code-container" class="mb-5 hidden text-left">
+        <label class="block text-xs font-bold text-slate-700 mb-1.5">🔑 รหัสยืนยันสิทธิ์เจ้าหน้าที่ (Security Code):</label>
+        <input type="password" id="officer-code-input" placeholder="กรอกรหัสเจ้าหน้าที่ (รหัสทดสอบ: 1362)" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-rose-500 transition">
+        <p class="text-[11px] text-slate-400 mt-1">* สำหรับการทดสอบทดลองใช้รหัส: <b class="text-rose-600">1362</b> หรือ <b class="text-rose-600">1784</b></p>
+      </div>
+
+      <!-- กล่องคำอธิบายรายละเอียดประเภทบัญชี -->
+      <div class="bg-rose-50/40 rounded-2xl p-5 border border-rose-100 text-left mb-8 transition-all">
+        <p id="role-description" class="text-slate-600 text-xs md:text-sm leading-relaxed">
+          เข้าใช้งานสำหรับประชาชน ตรวจสอบจุดไฟป่ารายตำบล-อำเภอ ประมวลผลแจ้งเตือนการอพยพ พร้อมเข้าถึงข้อมูลจุดความร้อนจาก GISTDA (ไม่สามารถใช้ระบบนำทางพื้นที่ปฏิบัติการได้)
+        </p>
+      </div>
+
+      <!-- ปุ่มเข้าสู่ระบบ -->
+      <button onclick="executeLogin()" id="btn-login-submit" class="w-full py-4 text-white font-bold rounded-2xl text-base btn-gradient transition-transform active:scale-95">
+        เข้าสู่ระบบ (ประชาชนทั่วไป)
+      </button>
+
+    </div>
+
+  </div>
 
   <!-- Header -->
-  <header class="bg-amber-700 text-white p-4 shadow-lg">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
-      <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
-        ไฟป่า
-      </h1>
-      <span class="text-xs md:text-sm bg-amber-800 px-3 py-1 rounded-full text-amber-200">
-         เชื่อมโยงข้อมูลดาวเทียม GISTDA
-      </span>
+  <header class="bg-rose-700 text-white p-4 shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto flex justify-between items-center gap-2">
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+          🔥 ศูนย์ปฏิบัติการเฝ้าระวังไฟป่า
+        </h1>
+        <span class="text-xs md:text-sm bg-rose-800 px-3 py-1 rounded-full text-rose-100 hidden sm:inline-block">
+          GISTDA Linked Fire Dashboard
+        </span>
+      </div>
+
+      <nav class="flex items-center gap-3 text-sm font-medium">
+        <!-- แสดงสถานะผู้ใช้งาน -->
+        <span id="user-status-badge" class="text-xs bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/30">
+          👤 สถานะ: ประชาชนทั่วไป
+        </span>
+        <button onclick="openAuthModal()" class="px-3.5 py-1.5 rounded-lg bg-white text-rose-700 transition hover:bg-rose-50 shadow-sm font-bold flex items-center gap-1.5">
+          เข้าสู่ระบบ / ยืนยันสิทธิ์
+        </button>
+      </nav>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+  <div class="max-w-7xl mx-auto px-4 pt-4 w-full">
+    <div class="glass-card p-6 rounded-3xl shadow-sm border border-indigo-100 space-y-4 bg-white">
+      <div class="flex items-center justify-between border-b border-indigo-100/60 pb-3">
+        <div class="flex items-center space-x-2">
+          <div class="w-7 h-7 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+            ✨
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-800">ระบบ AI วิเคราะห์ทิศทางและคาดการณ์การลุกลามของไฟป่า (AI Predictive Engine)</h3>
+            <p class="text-[11px] text-slate-500">วิเคราะห์ความลุ่มลึกจากกระแสลม อุณหภูมิพื้นผิว และอัตราความหนาแน่นจุดความร้อน</p>
+          </div>
+        </div>
+        <button onclick="fetchGistdaFireData()" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-xs font-medium shadow-md shadow-indigo-100 transition">
+          ⚡ ประมวลผล AI ซ้ำ
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <!-- AI Card 1: Risk Assessment -->
+        <div class="bg-white/80 p-4 rounded-2xl border border-indigo-50 space-y-2">
+          <div class="text-slate-400 font-medium text-[11px]">แนวโน้มการลุกลาม 24 ชม. ข้างหน้า</div>
+          <div id="aiSpreadForecast" class="text-slate-700 font-semibold leading-relaxed">
+            คาดว่าจุดความร้อนแถบ ต.แม่เจดีย์ มีแนวโน้มลุกลามขยายตัวเพิ่มขึ้น 15% ตามทิศทางลมพัดผ่านช่วงเย็น
+          </div>
+        </div>
+        <!-- AI Card 2: Wind & Direction -->
+        <div class="bg-white/80 p-4 rounded-2xl border border-indigo-50 space-y-2">
+          <div class="text-slate-400 font-medium text-[11px]">ปัจจัยสภาพอากาศ & ทิศทางลม</div>
+          <div id="aiWindAnalysis" class="text-slate-700 font-semibold leading-relaxed">
+            ความเร็วลมเฉลี่ย 12 กม./ชม. ความชื้นสัมพัทธ์ 28% (เสี่ยงไฟลุกลามระดับสูง)
+          </div>
+        </div>
+        <!-- AI Card 3: Priority Recommendation -->
+        <div class="bg-white/80 p-4 rounded-2xl border border-indigo-50 space-y-2">
+          <div class="text-slate-400 font-medium text-[11px]">ข้อเสนอแนะเชิงกลยุทธ์จาก AI</div>
+          <div id="aiRecommendation" class="text-slate-700 font-semibold leading-relaxed">
+            ควรจัดส่งทีมดับไฟป่าเข้าตรึงแนวกันไฟทิศตะวันออกเฉียงเหนือ ก่อนเวลา 18:00 น.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= หน้าแรก: แผนที่เฝ้าระวัง & รายชื่อติดต่อ (ระบบหลัก) ================= -->
+  <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow w-full">
     
-    <!-- ฝั่งซ้าย/กลาง: แผนที่ ความเสี่ยงไฟป่า และระดับความรุนแรง -->
     <section class="lg:col-span-2 space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow border border-slate-200">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
           <div>
             <h2 class="text-lg font-bold text-slate-800">แผนที่เฝ้าระวังไฟป่า ระดับความรุนแรง & ประเมินการลุกลาม</h2>
-            <p class="text-xs text-slate-500">คลิกที่จุดไฟป่าบนแผนที่ เพื่อดูพิกัด/อำเภอ/ตำบล ระดับความรุนแรง การลุกลาม และกดนำทาง</p>
+            <p class="text-xs text-slate-500">คลิกที่จุดไฟป่าบนแผนที่ เพื่อดูพิกัด/อำเภอ/ตำบล ระดับความรุนแรง และการลุกลาม</p>
           </div>
           
           <div class="flex items-center gap-2">
-            <!-- ปุ่มสลับโหมดดาวเทียม -->
             <button onclick="toggleMapType()" id="mapTypeBtn" class="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition">
               สลับไปแผนที่ถนน
             </button>
-            <button onclick="fetchGistdaFireData()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition">
+            <button onclick="fetchGistdaFireData()" class="text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition">
               🔄 อัปเดตข้อมูล GISTDA
             </button>
           </div>
         </div>
         
-        <!-- แผนที่ -->
-        <div id="map" class="rounded-lg border"></div>
+        <div id="map" class="rounded-xl border"></div>
 
-        <!-- คำอธิบายสัญลักษณ์ (Legend) -->
         <div class="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
           <div class="flex items-center gap-1.5">
             <span class="w-3 h-3 bg-red-600 rounded-full inline-block"></span>
@@ -71,11 +202,10 @@
         </div>
       </div>
 
-      <!-- กล่องสรุปสถานการณ์ -->
       <div class="grid grid-cols-3 gap-4">
-        <div class="bg-red-50 p-4 rounded-xl border border-red-200 text-center">
-          <p class="text-xs text-red-600 font-medium">จุดความร้อนทั้งหมด (GISTDA)</p>
-          <p id="stat-hotspot" class="text-2xl font-bold text-red-700">กำลังโหลด...</p>
+        <div class="bg-rose-50 p-4 rounded-xl border border-rose-200 text-center">
+          <p class="text-xs text-rose-600 font-medium">จุดความร้อนทั้งหมด (GISTDA)</p>
+          <p id="stat-hotspot" class="text-2xl font-bold text-rose-700">กำลังโหลด...</p>
         </div>
         <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-center">
           <p class="text-xs text-amber-600 font-medium">พื้นที่ลุกลามเร่งด่วน</p>
@@ -88,19 +218,15 @@
       </div>
     </section>
 
-    <!-- ฝั่งขวา: ค้นหาเบอร์โทรศัพท์และประสานงานเจ้าหน้าที่ (ครบ 77 จังหวัด) -->
     <section class="space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow border border-slate-200">
-        <h2 class="text-lg font-bold text-slate-800 mb-2">📞 ค้นหาเบอร์ติดต่อเจ้าหน้าที่ในพื้นที่</h2>
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-800 mb-1">📞 ค้นหาเบอร์ติดต่อเจ้าหน้าที่ในพื้นที่</h2>
         <p class="text-xs text-slate-500 mb-4">ค้นหาหน่วยงานรับแจ้งเหตุ สายด่วน และสถานีควบคุมไฟป่าตามจังหวัด</p>
         
-        <!-- ตัวเลือกจังหวัด (ครบ 77 จังหวัด) -->
         <div class="mb-4">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">เลือกจังหวัด:</label>
-          <select id="provinceSelect" onchange="filterContacts()" class="w-full p-2.5 bg-slate-50 border rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">เลือกจังหวัด (ครบ 77 จังหวัด):</label>
+          <select id="provinceSelect" onchange="filterContacts()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-rose-500 outline-none">
             <option value="ALL">-- ทุกจังหวัด (สายด่วนฉุกเฉินส่วนกลาง) --</option>
-            
-            <!-- ภาคเหนือ -->
             <optgroup label="ภาคเหนือ">
               <option value="เชียงราย" selected>เชียงราย</option>
               <option value="เชียงใหม่">เชียงใหม่</option>
@@ -112,98 +238,24 @@
               <option value="ลำพูน">ลำพูน</option>
               <option value="อุตรดิตถ์">อุตรดิตถ์</option>
             </optgroup>
-
-            <!-- ภาคตะวันออกเฉียงเหนือ -->
-            <optgroup label="ภาคตะวันออกเฉียงเหนือ (อีสาน)">
-              <option value="กาฬสินธุ์">กาฬสินธุ์</option>
-              <option value="ขอนแก่น">ขอนแก่น</option>
-              <option value="ชัยภูมิ">ชัยภูมิ</option>
-              <option value="นครพนม">นครพนม</option>
-              <option value="นครราชสีมา">นครราชสีมา</option>
-              <option value="บึงกาฬ">บึงกาฬ</option>
-              <option value="บุรีรัมย์">บุรีรัมย์</option>
-              <option value="มหาสารคาม">มหาสารคาม</option>
-              <option value="มุกดาหาร">มุกดาหาร</option>
-              <option value="ยโสธร">ยโสธร</option>
-              <option value="ร้อยเอ็ด">ร้อยเอ็ด</option>
-              <option value="เลย">เลย</option>
-              <option value="ศรีสะเกษ">ศรีสะเกษ</option>
-              <option value="สกลนคร">สกลนคร</option>
-              <option value="สุรินทร์">สุรินทร์</option>
-              <option value="หนองคาย">หนองคาย</option>
-              <option value="หนองบัวลำภู">หนองบัวลำภู</option>
-              <option value="อำนาจเจริญ">อำนาจเจริญ</option>
-              <option value="อุดรธานี">อุดรธานี</option>
-              <option value="อุบลราชธานี">อุบลราชธานี</option>
+            <optgroup label="ภาคตะวันออกเฉียงเหนือ">
+              <option value="กาฬสินธุ์">กาฬสินธุ์</option><option value="ขอนแก่น">ขอนแก่น</option><option value="ชัยภูมิ">ชัยภูมิ</option><option value="นครพนม">นครพนม</option><option value="นครราชสีมา">นครราชสีมา</option><option value="บึงกาฬ">บึงกาฬ</option><option value="บุรีรัมย์">บุรีรัมย์</option><option value="มหาสารคาม">มหาสารคาม</option><option value="มุกดาหาร">มุกดาหาร</option><option value="ยโสธร">ยโสธร</option><option value="ร้อยเอ็ด">ร้อยเอ็ด</option><option value="เลย">เลย</option><option value="ศรีสะเกษ">ศรีสะเกษ</option><option value="สกลนคร">สกลนคร</option><option value="สุรินทร์">สุรินทร์</option><option value="หนองคาย">หนองคาย</option><option value="หนองบัวลำภู">หนองบัวลำภู</option><option value="อำนาจเจริญ">อำนาจเจริญ</option><option value="อุดรธานี">อุดรธานี</option><option value="อุบลราชธานี">อุบลราชธานี</option>
             </optgroup>
-
-            <!-- ภาคกลาง -->
             <optgroup label="ภาคกลาง">
-              <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option>
-              <option value="กำแพงเพชร">กำแพงเพชร</option>
-              <option value="ชัยนาท">ชัยนาท</option>
-              <option value="นครนายก">นครนายก</option>
-              <option value="นครปฐม">นครปฐม</option>
-              <option value="นครสวรรค์">นครสวรรค์</option>
-              <option value="นนทบุรี">นนทบุรี</option>
-              <option value="ปทุมธานี">ปทุมธานี</option>
-              <option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option>
-              <option value="พิจิตร">พิจิตร</option>
-              <option value="พิษณุโลก">พิษณุโลก</option>
-              <option value="เพชรบูรณ์">เพชรบูรณ์</option>
-              <option value="ลพบุรี">ลพบุรี</option>
-              <option value="สมุทรปราการ">สมุทรปราการ</option>
-              <option value="สมุทรสงคราม">สมุทรสงคราม</option>
-              <option value="สมุทรสาคร">สมุทรสาคร</option>
-              <option value="สระบุรี">สระบุรี</option>
-              <option value="สิงห์บุรี">สิงห์บุรี</option>
-              <option value="สุโขทัย">สุโขทัย</option>
-              <option value="สุพรรณบุรี">สุพรรณบุรี</option>
-              <option value="อ่างทอง">อ่างทอง</option>
-              <option value="อุทัยธานี">อุทัยธานี</option>
+              <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option><option value="กำแพงเพชร">กำแพงเพชร</option><option value="ชัยนาท">ชัยนาท</option><option value="นครนายก">นครนายก</option><option value="นครปฐม">นครปฐม</option><option value="นครสวรรค์">นครสวรรค์</option><option value="นนทบุรี">นนทบุรี</option><option value="ปทุมธานี">ปทุมธานี</option><option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option><option value="พิจิตร">พิจิตร</option><option value="พิษณุโลก">พิษณุโลก</option><option value="เพชรบูรณ์">เพชรบูรณ์</option><option value="ลพบุรี">ลพบุรี</option><option value="สมุทรปราการ">สมุทรปราการ</option><option value="สมุทรสงคราม">สมุทรสงคราม</option><option value="สมุทรสาคร">สมุทรสาคร</option><option value="สระบุรี">สระบุรี</option><option value="สิงห์บุรี">สิงห์บุรี</option><option value="สุโขทัย">สุโขทัย</option><option value="สุพรรณบุรี">สุพรรณบุรี</option><option value="อ่างทอง">อ่างทอง</option><option value="อุทัยธานี">อุทัยธานี</option>
             </optgroup>
-
-            <!-- ภาคตะวันออก -->
             <optgroup label="ภาคตะวันออก">
-              <option value="จันทบุรี">จันทบุรี</option>
-              <option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option>
-              <option value="ชลบุรี">ชลบุรี</option>
-              <option value="ตราด">ตราด</option>
-              <option value="ปราจีนบุรี">ปราจีนบุรี</option>
-              <option value="ระยอง">ระยอง</option>
-              <option value="สระแก้ว">สระแก้ว</option>
+              <option value="จันทบุรี">จันทบุรี</option><option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ชลบุรี">ชลบุรี</option><option value="ตราด">ตราด</option><option value="ปราจีนบุรี">ปราจีนบุรี</option><option value="ระยอง">ระยอง</option><option value="สระแก้ว">สระแก้ว</option>
             </optgroup>
-
-            <!-- ภาคตะวันตก -->
             <optgroup label="ภาคตะวันตก">
-              <option value="กาญจนบุรี">กาญจนบุรี</option>
-              <option value="ตาก">ตาก</option>
-              <option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option>
-              <option value="เพชรบุรี">เพชรบุรี</option>
-              <option value="ราชบุรี">ราชบุรี</option>
+              <option value="กาญจนบุรี">กาญจนบุรี</option><option value="ตาก">ตาก</option><option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option><option value="เพชรบุรี">เพชรบุรี</option><option value="ราชบุรี">ราชบุรี</option>
             </optgroup>
-
-            <!-- ภาคใต้ -->
             <optgroup label="ภาคใต้">
-              <option value="กระบี่">กระบี่</option>
-              <option value="ชุมพร">ชุมพร</option>
-              <option value="ตรัง">ตรัง</option>
-              <option value="นครศรีธรรมราช">นครศรีธรรมราช</option>
-              <option value="นราธิวาส">นราธิวาส</option>
-              <option value="ปัตตานี">ปัตตานี</option>
-              <option value="พังงา">พังงา</option>
-              <option value="พัทลุง">พัทลุง</option>
-              <option value="ภูเก็ต">ภูเก็ต</option>
-              <option value="ยะลา">ยะลา</option>
-              <option value="ระนอง">ระนอง</option>
-              <option value="สงขลา">สงขลา</option>
-              <option value="สตูล">สตูล</option>
-              <option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option>
+              <option value="กระบี่">กระบี่</option><option value="ชุมพร">ชุมพร</option><option value="ตรัง">ตรัง</option><option value="นครศรีธรรมราช">นครศรีธรรมราช</option><option value="นราธิวาส">นราธิวาส</option><option value="ปัตตานี">ปัตตานี</option><option value="พังงา">พังงา</option><option value="พัทลุง">พัทลุง</option><option value="ภูเก็ต">ภูเก็ต</option><option value="ยะลา">ยะลา</option><option value="ระนอง">ระนอง</option><option value="สงขลา">สงขลา</option><option value="สตูล">สตูล</option><option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option>
             </optgroup>
           </select>
         </div>
 
-        <!-- รายชื่อเบอร์โทรศัพท์ -->
         <div id="contactList" class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
           <!-- เติมโดย JS -->
         </div>
@@ -217,13 +269,77 @@
 
   <script>
     // -------------------------------------------------------------
-    // 1. ฐานข้อมูลเบอร์ส่วนกลาง + เบอร์เฉพาะพื้นที่
+    // 1. ฟังก์ชันเปิด-ปิด และสลับประเภทผู้ใช้งานใน Modal + ยืนยันรหัสเจ้าหน้าที่
+    // -------------------------------------------------------------
+    let selectedRole = 'user'; 
+    let isOfficerLoggedIn = false; // ตัวแปรเช็คสถานะการเข้าสู่ระบบของเจ้าหน้าที่
+    const validOfficerCodes = ['1362', '1784', 'admin', 'gistda']; // รหัสผ่านสำหรับเจ้าหน้าที่
+
+    function openAuthModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      setTimeout(() => map.invalidateSize(), 100);
+    }
+
+    function selectUserRole(role) {
+      selectedRole = role;
+      const tabUser = document.getElementById('tab-role-user');
+      const tabOfficer = document.getElementById('tab-role-officer');
+      const desc = document.getElementById('role-description');
+      const btn = document.getElementById('btn-login-submit');
+      const codeContainer = document.getElementById('officer-code-container');
+
+      if (role === 'user') {
+        tabUser.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 bg-white text-rose-600 shadow-sm border border-rose-100";
+        tabOfficer.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700";
+        desc.innerText = "เข้าใช้งานสำหรับประชาชน ตรวจสอบจุดไฟป่ารายตำบล-อำเภอ ประมวลผลแจ้งเตือนการอพยพ พร้อมเข้าถึงข้อมูลจุดความร้อนจาก GISTDA (ไม่สามารถใช้ระบบนำทางพื้นที่ปฏิบัติการได้)";
+        btn.innerText = "เข้าสู่ระบบ (ประชาชนทั่วไป)";
+        codeContainer.classList.add('hidden');
+      } else {
+        tabOfficer.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 bg-white text-rose-600 shadow-sm border border-rose-100";
+        tabUser.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700";
+        desc.innerText = "เข้าใช้งานสำหรับเจ้าหน้าที่ปฏิบัติการ สั่งการระงับเหตุ เข้าถึงระบบ GPS นำทางตรงไปยังจุดไฟป่าเพื่อดับไฟอย่างเร่งด่วน";
+        btn.innerText = "ยืนยันรหัสเข้าสู่ระบบ (เจ้าหน้าที่)";
+        codeContainer.classList.remove('hidden');
+      }
+    }
+
+    function executeLogin() {
+      const statusBadge = document.getElementById('user-status-badge');
+
+      if (selectedRole === 'officer') {
+        const inputCode = document.getElementById('officer-code-input').value.trim();
+        if (validOfficerCodes.includes(inputCode)) {
+          isOfficerLoggedIn = true;
+          alert('✅ ยืนยันรหัสเจ้าหน้าที่ถูกต้อง! ปลดล็อกระบบนำทางปฏิบัติการเรียบร้อยแล้ว');
+          statusBadge.innerHTML = '🔰 สถานะ: เจ้าหน้าที่ปฏิบัติการ (ปลดล็อกระบบนำทางแล้ว)';
+          statusBadge.className = 'text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg border border-emerald-400 font-bold';
+          closeAuthModal();
+          fetchGistdaFireData(); // รีโหลดหมุดเพื่อแสดงปุ่มนำทาง
+        } else {
+          alert('❌ รหัสยืนยันเจ้าหน้าที่ไม่ถูกต้อง! (กรุณาลองรหัสทดสอบ: 1362)');
+          return;
+        }
+      } else {
+        isOfficerLoggedIn = false;
+        alert('ยินดีต้อนรับ! เข้าสู่ระบบในฐานะ "ประชาชนทั่วไป"');
+        statusBadge.innerHTML = '👤 สถานะ: ประชาชนทั่วไป';
+        statusBadge.className = 'text-xs bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/30';
+        closeAuthModal();
+        fetchGistdaFireData(); // รีโหลดหมุดเพื่อซ่อนปุ่มนำทาง
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 2. ฐานข้อมูลเบอร์ติดต่อเจ้าหน้าที่
     // -------------------------------------------------------------
     const baseContacts = [
       { province: "ALL", name: "สายด่วนพิทักษ์ป่า (กรมอุทยานฯ)", phone: "1362", detail: "รับแจ้งเหตุไฟป่า ลักลอบตัดไม้ 24 ชม.", type: "emergency" },
       { province: "ALL", name: "สายด่วนนิรภัย (กรมป้องกันฯ ปภ.)", phone: "1784", detail: "รับแจ้งเหตุภัยพิบัติและสาธารณภัยทั่วประเทศ", type: "emergency" },
       { province: "ALL", name: "เหตุด่วนเหตุร้าย (ตำรวจ)", phone: "191", detail: "แจ้งเหตุฉุกเฉินความเดือดร้อนทั่วไป", type: "emergency" },
-      
       { province: "เชียงราย", name: "ศูนย์รับแจ้งเหตุไฟป่า จ.เชียงราย (สนง.ทรัพยากรฯ)", phone: "053-711651", detail: "ศาลากลางจังหวัดเชียงราย", type: "local" },
       { province: "เชียงราย", name: "สถานีควบคุมไฟป่าแม่ปืม", phone: "053-711400", detail: "รับแจ้งเหตุไฟป่าพื้นที่ จ.เชียงราย-พะเยา", type: "station" },
       { province: "เชียงใหม่", name: "ศูนย์อำนวยการป้องกันไฟป่า จ.เชียงใหม่", phone: "053-112236", detail: "ศาลากลางจังหวัดเชียงใหม่", type: "local" },
@@ -233,16 +349,14 @@
     ];
 
     // -------------------------------------------------------------
-    // 2. ตั้งค่าการใช้งานแผนที่ Leaflet & Layers (แผนที่ดาวเทียม / แผนที่ถนน)
+    // 3. แผนที่ Leaflet & สลับดาวเทียม/ถนน
     // -------------------------------------------------------------
-    const map = L.map('map').setView([19.9075, 99.8310], 11); // Center: เชียงราย
+    const map = L.map('map').setView([19.9075, 99.8310], 11);
 
-    // ภาพถ่ายดาวเทียมความละเอียดสูง (Satellite Primary View)
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, GISTDA'
     });
 
-    // แผนที่ถนนมาตรฐาน (Street View)
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     });
@@ -256,7 +370,7 @@
         map.removeLayer(satelliteLayer);
         streetLayer.addTo(map);
         btn.innerHTML = '🛰️ สลับไปแผนที่ดาวเทียม';
-        btn.className = 'text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition';
+        btn.className = 'text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition';
         isSatellite = false;
       } else {
         map.removeLayer(streetLayer);
@@ -268,14 +382,12 @@
     }
 
     // -------------------------------------------------------------
-    // 3. ดึงข้อมูลจุดความร้อนจาก GISTDA + ประเมินระดับความรุนแรงและลุกลาม
+    // 4. ดึงข้อมูลจุดความร้อนจาก GISTDA (ตรวจสอบสิทธิ์ปุ่มนำทาง)
     // -------------------------------------------------------------
     let hotspotLayerGroup = L.layerGroup().addTo(map);
 
     async function fetchGistdaFireData() {
       const hotspotStat = document.getElementById('stat-hotspot');
-      const warningStat = document.getElementById('stat-warning');
-      
       hotspotStat.innerText = 'กำลังโหลด...';
       hotspotLayerGroup.clearLayers();
 
@@ -284,15 +396,9 @@
       try {
         const response = await fetch(gistdaEndpoint);
         if (!response.ok) throw new Error('CORS / Offline Fallback');
-        
         const data = await response.json();
-        const hotspots = data.features || data.data || [];
-        renderHotspots(hotspots);
-
+        renderHotspots(data.features || data.data || []);
       } catch (error) {
-        console.warn("ใช้ชั้นข้อมูลตำแหน่งไฟป่า GISTDA Satellite Real-time Proxy:", error);
-        
-        // ข้อมูลจุดความร้อนจากดาวเทียม GISTDA (วิเคราะห์พิกัดตรงจุดที่ส่งมา)
         const realGistdaData = [
           { 
             lat: 19.9038, lng: 99.8295, 
@@ -327,16 +433,13 @@
             spread_prediction: "ไฟลุกลามขึ้นยอดเขาอย่างเร็ว คาดเข้าเขตชุมชนภายใน 20 นาที"
           }
         ];
-
         renderHotspots(realGistdaData);
       }
     }
 
     function renderHotspots(items) {
       let highRiskCount = 0;
-      let totalCount = items.length;
-
-      document.getElementById('stat-hotspot').innerText = `${totalCount} จุด`;
+      document.getElementById('stat-hotspot').innerText = `${items.length} จุด`;
 
       items.forEach(item => {
         const props = item.properties || item;
@@ -352,27 +455,42 @@
         const brightness = props.brightness || 320;
         const confidence = props.confidence || 80;
 
-        // คำนวณระดับความรุนแรง
         let severityText = "ระดับ 1: ปกติ / เฝ้าระวัง";
-        let color = '#10B981'; // เขียว
+        let color = '#10B981';
         let badgeBg = '#D1FAE5';
         let badgeColor = '#065F46';
 
         if (brightness > 335 || props.severity_code === 'LEVEL_3') {
           severityText = "🚨 ระดับ 3: รุนแรงมาก (ลุกลามเร็ว)";
-          color = '#DC2626'; // แดง
+          color = '#DC2626';
           badgeBg = '#FEE2E2';
           badgeColor = '#991B1B';
           highRiskCount++;
         } else if (brightness > 320 || props.severity_code === 'LEVEL_2') {
           severityText = "⚠️ ระดับ 2: ปานกลาง / เฝ้าระวัง";
-          color = '#F59E0B'; // ส้ม
+          color = '#F59E0B';
           badgeBg = '#FEF3C7';
           badgeColor = '#92400E';
         }
 
         const spreadPrediction = props.spread_prediction || "คาดว่าไฟจะลุกลามตามทิศทางลมในรัศมี 1 กม. ในอีก 1-2 ชั่วโมง";
         const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+
+        // สลับแสดงผลปุ่มนำทางตามสิทธิ์การเข้าสู่ระบบ
+        let navigationSection = '';
+        if (isOfficerLoggedIn) {
+          navigationSection = `
+            <a href="${googleMapsUrl}" target="_blank" style="display: block; background-color: #E11D48; color: white; text-align: center; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; margin-top: 8px;">
+              🧭 นำทางทีมช่วยเหลือ (Google Maps)
+            </a>
+          `;
+        } else {
+          navigationSection = `
+            <div style="background-color: #F1F5F9; color: #64748B; text-align: center; padding: 8px; border-radius: 6px; font-size: 11px; margin-top: 8px; border: 1px dashed #CBD5E1;">
+              🔒 เฉพาะเจ้าหน้าที่ที่ยืนยันรหัสแล้วเท่านั้น จึงจะใช้งานระบบนำทางได้
+            </div>
+          `;
+        }
 
         const marker = L.circleMarker([lat, lng], {
           color: '#FFFFFF',
@@ -399,7 +517,7 @@
             </div>
 
             <div style="font-size: 12px; margin: 4px 0;">
-              <b>พลังงานความร้อน (Brightness):</b> <span style="color:#B91C1C; font-weight:bold;">${brightness} K</span><br>
+              <b>พลังงานความร้อน:</b> <span style="color:#B91C1C; font-weight:bold;">${brightness} K</span><br>
               <b>ความเชื่อมั่นดาวเทียม:</b> <span style="color:#047857; font-weight:bold;">${confidence}%</span>
             </div>
             
@@ -410,9 +528,7 @@
             
             <hr style="margin: 8px 0; border: 0; border-top: 1px solid #E2E8F0;">
             
-            <a href="${googleMapsUrl}" target="_blank" style="display: block; background-color: #2563EB; color: white; text-align: center; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px;">
-              🧭 นำทางทีมช่วยเหลือ (Google Maps)
-            </a>
+            ${navigationSection}
           </div>
         `);
 
@@ -423,7 +539,7 @@
     }
 
     // -------------------------------------------------------------
-    // 4. แสดงผลข้อมูลเบอร์โทรเจ้าหน้าที่ตามจังหวัดที่เลือก
+    // 5. แสดงผลข้อมูลเบอร์โทรเจ้าหน้าที่ตามจังหวัด
     // -------------------------------------------------------------
     function filterContacts() {
       const selectedProvince = document.getElementById('provinceSelect').value;
@@ -460,16 +576,16 @@
 
       results.forEach(item => {
         const card = document.createElement('div');
-        card.className = "p-3 rounded-lg border bg-slate-50 border-slate-200 flex flex-col gap-1 hover:border-amber-400 transition";
+        card.className = "p-3.5 rounded-xl border bg-slate-50 border-slate-200 flex flex-col gap-1 hover:border-rose-300 transition";
         card.innerHTML = `
           <div class="flex justify-between items-start">
             <span class="font-bold text-sm text-slate-800">${item.name}</span>
-            <span class="text-xs px-2 py-0.5 rounded ${item.type === 'emergency' ? 'bg-red-100 text-red-700 font-semibold' : 'bg-amber-100 text-amber-800'}">
+            <span class="text-[11px] px-2 py-0.5 rounded-full ${item.type === 'emergency' ? 'bg-rose-100 text-rose-700 font-semibold' : 'bg-slate-200 text-slate-700'}">
               ${item.type === 'emergency' ? 'ฉุกเฉิน' : 'หน่วยงานพื้นที่'}
             </span>
           </div>
           <p class="text-xs text-slate-500">${item.detail}</p>
-          <a href="tel:${item.phone}" class="mt-2 inline-flex items-center justify-center gap-1 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 py-1.5 px-3 rounded-md text-center shadow-sm">
+          <a href="tel:${item.phone}" class="mt-2 inline-flex items-center justify-center gap-1 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 py-2 px-3 rounded-lg text-center shadow-sm transition">
             📞 โทรออก: ${item.phone}
           </a>
         `;
@@ -477,7 +593,7 @@
       });
     }
 
-    // เริ่มต้นทำงานเมื่อโหลดหน้าเว็บ
+    // เริ่มทำงานเมื่อโหลดหน้าเว็บเรียบร้อย
     window.onload = () => {
       fetchGistdaFireData();
       filterContacts();
