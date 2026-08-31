@@ -36,9 +36,109 @@
       opacity: 0.95;
       box-shadow: 0 12px 24px -4px rgba(38, 129, 247, 0.836);
     }
+    /* ปุ่มแชทลอยอยู่มุมขวาล่างตลอดเวลา */
+.chat-widget-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background-color: #9b1c1c;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.chat-widget-btn:hover {
+    background-color: #9b1c1c;
+    transform: scale(1.05);
+}
+
+/* กล่องแชทที่จะเด้งขึ้นมาจากมุมขวาล่าง */
+.chat-widget-box {
+    display: none; /* ซ่อนไว้ก่อน */
+    position: fixed;
+    bottom: 80px;
+    right: 25px;
+    width: 330px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+    z-index: 10000;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.chat-header {
+    background-color: #9b1c1c;
+    color: white;
+    padding: 12px 15px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.chat-body {
+    padding: 15px;
+    max-height: 350px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+}
+
+.chat-body ul {
+    padding-left: 18px;
+    margin: 0;
+}
+
+.chat-body li {
+    margin-bottom: 10px;
+}
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between relative">
+  <!-- ปุ่มแชทลอยมุมขวาล่าง -->
+<div class="chat-widget-btn" onclick="toggleWildfireChat()">
+    <span>ข้อควรปฏิบัติเมื่อเกิดไฟป่า</span>
+</div>
+
+<!-- กล่องหน้าต่างแชทป๊อปอัป -->
+<div class="chat-widget-box" id="wildfireChatBox">
+    <div class="chat-header">
+        <span> ข้อควรปฏิบัติตนเมื่อเกิดไฟป่า</span>
+        <button class="chat-close-btn" onclick="toggleWildfireChat()">✕</button>
+    </div>
+    <div class="chat-body">
+        <ul>
+            <li><b>ตั้งสติ</b> และประเมินสถานการณ์ความรุนแรงและทิศทางของลม</li>
+            <li><b>รีบอพยพ</b> ออกจากพื้นที่เหนือลมหรือพื้นที่เสี่ยงภัยไปยังจุดปลอดภัยทันที</li>
+            <li><b>สวมหน้ากากอนามัย</b> หรือใช้ผ้าชุบน้ำหมาดๆ ปิดจมูกและปาก เพื่อป้องกันการสูดดมควันพิษเข้าสู่ร่างกาย</li>
+            <li><b>หลีกเลี่ยงการอยู่ในที่โล่งแจ้ง</b> หรือทำกิจกรรมกลางแจ้งในพื้นที่ที่มีกลุ่มควันหนาแน่น</li>
+            <li><b>เตรียมแผนฉุกเฉิน</b> และดูแลเด็กหรือผู้สูงอายุในครอบครัวให้อยู่ในพื้นที่ปลอดภัย</li>
+        </ul>
+    </div>
+</div>
 
   <!-- ================= หน้าต่างเด้งเลือกประเภทผู้ใช้งาน (เด้งทันทีที่เปิดหน้าแรก) ================= -->
   <div id="auth-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-blur-backdrop">
@@ -75,7 +175,7 @@
 
       <!-- ช่องกรอกรหัสยืนยันเจ้าหน้าที่ (แสดงเฉพาะเมื่อเลือกเจ้าหน้าที่) -->
       <div id="officer-code-container" class="mb-5 hidden text-left">
-        <label class="block text-xs font-bold text-slate-700 mb-1.5">🔑 รหัสยืนยันสิทธิ์เจ้าหน้าที่ (Security Code):</label>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5"> รหัสยืนยันสิทธิ์เจ้าหน้าที่ (Security Code):</label>
         <input type="password" id="officer-code-input" placeholder="กรอกรหัสเจ้าหน้าที่ (รหัสทดสอบ: 1362)" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-rose-500 transition">
         <p class="text-[11px] text-slate-400 mt-1">* สำหรับการทดสอบทดลองใช้รหัส: <b class="text-rose-600">1362</b> หรือ <b class="text-rose-600">1784</b></p>
       </div>
@@ -103,9 +203,7 @@
         <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
          การพัฒนาระบบอัจฉริยะเฝ้าระวัง และตรวจจับไฟป่าด้วยข้อมูลดาวเทียม
         </h1>
-        <span class="text-xs md:text-sm bg-rose-800 px-3 py-1 rounded-full text-rose-100 hidden sm:inline-block">
-          GISTDA Linked Fire Dashboard
-        </span>
+     
       </div>
 
       <nav class="flex items-center gap-3 text-sm font-medium">
@@ -268,6 +366,14 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
+    function toggleWildfireChat() {
+    const chatBox = document.getElementById('wildfireChatBox');
+    if (chatBox.style.display === 'block') {
+        chatBox.style.display = 'none';
+    } else {
+        chatBox.style.display = 'block';
+    }
+}
     // -------------------------------------------------------------
     // 1. ฟังก์ชันเปิด-ปิด และสลับประเภทผู้ใช้งานใน Modal + ยืนยันรหัสเจ้าหน้าที่
     // -------------------------------------------------------------
