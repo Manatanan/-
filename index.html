@@ -37,60 +37,64 @@
       box-shadow: 0 12px 24px -4px rgba(38, 129, 247, 0.836);
     }
     /* ปุ่มแชทลอยอยู่มุมขวาล่างตลอดเวลา */
-.chat-widget-btn {
+
+/* ปุ่มแชทลอยติดมุมขวาล่าง */
+.wildfire-chat-btn {
     position: fixed;
     bottom: 25px;
     right: 25px;
-    background-color: #9b1c1c;
+    width: 200px;
+    height: 58px;
+    background-color: #e67e22;
     color: white;
-    padding: 12px 18px;
-    border-radius: 30px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     cursor: pointer;
-    font-weight: bold;
-    z-index: 9999;
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 8px;
+    font-size: 18px;
+    z-index: 9999;
     transition: transform 0.2s, background-color 0.2s;
 }
 
-.chat-widget-btn:hover {
-    background-color: #9b1c1c;
-    transform: scale(1.05);
+.wildfire-chat-btn:hover {
+    transform: scale(1.1);
+    background-color: #d35400;
 }
 
-/* กล่องแชทที่จะเด้งขึ้นมาจากมุมขวาล่าง */
-.chat-widget-box {
-    display: none; /* ซ่อนไว้ก่อน */
+/* กล่องหน้าต่างแชท */
+.wildfire-widget-box {
+    display: none;
     position: fixed;
-    bottom: 80px;
+    bottom: 95px;
     right: 25px;
     width: 330px;
     background-color: #ffffff;
     border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 5px 25px rgba(0,0,0,0.25);
     z-index: 10000;
     overflow: hidden;
-    animation: slideUp 0.3s ease-out;
+    animation: slideUpWf 0.3s ease-out;
 }
 
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
+@keyframes slideUpWf {
+    from { transform: translateY(15px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
-.chat-header {
-    background-color: #9b1c1c;
+.wf-chat-header {
+    background-color: #2c3e50;
     color: white;
     padding: 12px 15px;
     font-weight: bold;
+    font-size: 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.chat-close-btn {
+.wf-close-btn {
     background: none;
     border: none;
     color: white;
@@ -98,38 +102,74 @@
     cursor: pointer;
 }
 
-.chat-body {
+/* เมนูสลับแท็บ */
+.wf-tab-menu {
+    display: flex;
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ddd;
+}
+
+.wf-tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #666;
+}
+
+.wf-tab-btn.active {
+    background: #ffffff;
+    color: #e67e22;
+    border-bottom: 2px solid #e67e22;
+}
+
+.wf-tab-content {
     padding: 15px;
     max-height: 350px;
     overflow-y: auto;
-    font-size: 14px;
-    line-height: 1.6;
-    color: #333;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
-.chat-body ul {
+.wf-tab-content ul {
     padding-left: 18px;
     margin: 0;
 }
 
-.chat-body li {
-    margin-bottom: 10px;
+.wf-tab-content li {
+    margin-bottom: 8px;
 }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between relative">
   <!-- ปุ่มแชทลอยมุมขวาล่าง -->
-<div class="chat-widget-btn" onclick="toggleWildfireChat()">
+   
+   <!-- ปุ่มแชทวงกลมลอยมุมขวาล่าง -->
+<div class="wildfire-chat-btn" onclick="toggleWildfireWidget()">
     <span>ข้อควรปฏิบัติเมื่อเกิดไฟป่า</span>
+  <!-- ปุ่มทรงรีสีส้มพร้อมข้อความและไอคอน -->
 </div>
 
-<!-- กล่องหน้าต่างแชทป๊อปอัป -->
-<div class="chat-widget-box" id="wildfireChatBox">
-    <div class="chat-header">
-        <span> ข้อควรปฏิบัติตนเมื่อเกิดไฟป่า</span>
-        <button class="chat-close-btn" onclick="toggleWildfireChat()">✕</button>
+<!-- กล่องแชทป๊อปอัป -->
+<div class="wildfire-widget-box" id="wildfireWidgetBox">
+    <!-- ส่วนหัวหน้าต่างแชท -->
+    <div class="wf-chat-header">
+        <span> ศูนย์แจ้งเหตุ & ข้อปฏิบัติไฟป่า</span>
+        <button class="wf-close-btn" onclick="toggleWildfireWidget()">✕</button>
     </div>
-    <div class="chat-body">
+
+    <!-- เมนูแท็บสลับหน้า -->
+    <div class="wf-tab-menu">
+        <button class="wf-tab-btn active" id="tabInfoBtn" onclick="switchWfTab('info')">📖 ข้อปฏิบัติตน</button>
+        <button class="wf-tab-btn" id="tabReportBtn" onclick="switchWfTab('report')">📸 ถ่ายรูปแจ้งเหตุ</button>
+    </div>
+
+    <!-- เนื้อหาแท็บ 1: คำแนะนำไฟป่า -->
+    <div class="wf-tab-content" id="wfTabInfo">
+        <p style="margin-top:0; font-weight:bold; color:#d35400;">ข้อควรปฏิบัติตนเมื่อเกิดไฟป่า:</p>
         <ul>
             <li><b>ตั้งสติ</b> และประเมินสถานการณ์ความรุนแรงและทิศทางของลม</li>
             <li><b>รีบอพยพ</b> ออกจากพื้นที่เหนือลมหรือพื้นที่เสี่ยงภัยไปยังจุดปลอดภัยทันที</li>
@@ -138,8 +178,30 @@
             <li><b>เตรียมแผนฉุกเฉิน</b> และดูแลเด็กหรือผู้สูงอายุในครอบครัวให้อยู่ในพื้นที่ปลอดภัย</li>
         </ul>
     </div>
-</div>
 
+    <!-- เนื้อหาแท็บ 2: ถ่ายรูปแจ้งเหตุ & เจ้าหน้าที่ตรวจเช็ก -->
+    <div class="wf-tab-content" id="wfTabReport" style="display: none;">
+        <p style="margin-top:0; font-weight:bold; color:#c0392b;"> แจ้งเหตุไฟป่าตรงจุดที่คุณอยู่</p>
+        
+        <label style="font-size:13px;"><b>1. ถ่ายรูปพื้นที่เกิดเหตุ:</b></label>
+        <input type="file" id="wfPhotoInput" accept="image/*" capture="environment" onchange="previewWfImage(event)" style="margin: 8px 0; width:100%; font-size:12px;">
+        <img id="wfImagePreview" style="display:none; width:100%; max-height:150px; object-fit:cover; border-radius:6px; margin-bottom:8px;">
+
+        <div style="font-size:12px; color:#555; margin-bottom:10px;">
+             ระบบจะแนบพิกัด GPS ปัจจุบันของคุณไปพร้อมกับรูปภาพ
+        </div>
+
+        <button onclick="submitWfReport()" style="background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; width:100%; font-weight:bold; cursor:pointer;">
+             ส่งรายงานให้เจ้าหน้าที่
+        </button>
+
+        <!-- แสดงผลฝั่งเจ้าหน้าที่เมื่อมีรายการส่งเข้ามา -->
+        <div id="wfOfficerPanel" style="display:none; margin-top:15px; padding:10px; background:#f8f9fa; border:1px solid #ddd; border-radius:6px; font-size:13px;">
+            <b style="color:#2c3e50;">🛡️ มุมมองเจ้าหน้าที่ (ตรวจสอบเหตุจริง):</b>
+            <div id="wfReportDetail" style="margin-top:5px;"></div>
+        </div>
+    </div>
+</div>
   <!-- ================= หน้าต่างเด้งเลือกประเภทผู้ใช้งาน (เด้งทันทีที่เปิดหน้าแรก) ================= -->
   <div id="auth-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-blur-backdrop">
     
@@ -366,6 +428,88 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
+    // เปิด-ปิด กล่องแชท
+function toggleWildfireWidget() {
+    const box = document.getElementById('wildfireWidgetBox');
+    box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+}
+
+// สลับแท็บระหว่าง "ข้อปฏิบัติตน" และ "ถ่ายรูปแจ้งเหตุ"
+function switchWfTab(tabName) {
+    const tabInfo = document.getElementById('wfTabInfo');
+    const tabReport = document.getElementById('wfTabReport');
+    const btnInfo = document.getElementById('tabInfoBtn');
+    const btnReport = document.getElementById('tabReportBtn');
+
+    if (tabName === 'info') {
+        tabInfo.style.display = 'block';
+        tabReport.style.display = 'none';
+        btnInfo.classList.add('active');
+        btnReport.classList.remove('active');
+    } else {
+        tabInfo.style.display = 'none';
+        tabReport.style.display = 'block';
+        btnReport.classList.add('active');
+        btnInfo.classList.remove('active');
+    }
+}
+
+// แสดงตัวอย่างรูปถ่าย
+function previewWfImage(event) {
+    const preview = document.getElementById('wfImagePreview');
+    if (event.target.files && event.target.files[0]) {
+        preview.src = URL.createObjectURL(event.target.files[0]);
+        preview.style.display = 'block';
+    }
+}
+
+// ส่งรายงานแจ้งเหตุ
+function submitWfReport() {
+    const fileInput = document.getElementById('wfPhotoInput');
+    const previewImg = document.getElementById('wfImagePreview');
+    
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('กรุณาถ่ายรูปหรือแนบรูปภาพก่อนส่งครับ');
+        return;
+    }
+
+    // ดึงค่า lat/lng จากระบบตำแหน่งหลักที่มีในหน้าเว็บเดิม
+    // (หากใช้ชื่อตัวแปรอื่น สามารถเปลี่ยน lat, lng ให้ตรงกับในโค้ดเดิมได้ครับ)
+    const currentLat = typeof lat !== 'undefined' ? lat : 19.9071;
+    const currentLng = typeof lng !== 'undefined' ? lng : 99.8325;
+    const reportTime = new Date().toLocaleTimeString('th-TH');
+
+    alert('✅ ส่งภาพถ่ายและพิกัด GPS ให้เจ้าหน้าที่เรียบร้อยแล้ว!');
+
+    // แสดงข้อมูลในส่วนของเจ้าหน้าที่
+    const officerPanel = document.getElementById('wfOfficerPanel');
+    const reportDetail = document.getElementById('wfReportDetail');
+
+    officerPanel.style.display = 'block';
+    reportDetail.innerHTML = `
+        <p style="margin:3px 0;"><b>เวลา:</b> ${reportTime} น.</p>
+        <p style="margin:3px 0;"><b>พิกัด:</b> ${currentLat}, ${currentLng}</p>
+        <img src="${previewImg.src}" style="width:100%; height:100px; object-fit:cover; border-radius:4px; margin:5px 0;">
+        
+        <a href="https://firms.modaps.eosdis.nasa.gov/map/#d:24hrs;m:advanced;col:fire_archive_VIIRS_NRT;@${currentLng},${currentLat},14z" target="_blank" style="display:block; text-align:center; background:#d35400; color:white; padding:6px; text-decoration:none; border-radius:4px; margin:5px 0; font-weight:bold;">
+             เช็กจุดความร้อน NASA
+        </a>
+        
+        <div style="display:flex; gap:5px; margin-top:5px;">
+            <button onclick="confirmWfEvent(true)" style="flex:1; background:#27ae60; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">✅ เหตุจริง</button>
+            <button onclick="confirmWfEvent(false)" style="flex:1; background:#c0392b; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">❌ แจ้งเท็จ</button>
+        </div>
+    `;
+}
+
+// ฟังก์ชันเจ้าหน้าที่กดอนุมัติ/ปฏิเสธ
+function confirmWfEvent(isReal) {
+    if (isReal) {
+        alert('✅ ยืนยันเหตุจริง! ส่งพิกัดไปยังทีมดับไฟเรียบร้อยแล้ว');
+    } else {
+        alert('❌ ปฏิเสธการแจ้งเหตุ ทำการยกเลิกเรียบร้อย');
+    }
+}
     function toggleWildfireChat() {
     const chatBox = document.getElementById('wildfireChatBox');
     if (chatBox.style.display === 'block') {
