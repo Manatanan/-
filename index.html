@@ -1,887 +1,543 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>การพัฒนาระบบเฝ้าระวังไฟป่า</title>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Kanit -->
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <style>
-    body { font-family: 'Kanit', sans-serif; }
-    #map { height: 530px; width: 100%; }
-    .leaflet-popup-content-wrapper { border-radius: 12px; padding: 4px; }
-    
-    /* สไตล์ Modal หน้าต่างเด้ง */
-    .bg-blur-backdrop {
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(8px);
-    }
-    .custom-card {
-      background: #ffffff;
-      border-radius: 28px;
-      box-shadow: 0 25px 50px -12px rgba(116, 174, 250, 0.808);
-      border: 1px solid rgb(90, 203, 255);
-    }
-    .btn-gradient {
-      background: linear-gradient(135deg, #003cbd 0%, #65a1fa 50%, #8ccbff 100%);
-      box-shadow: 0 10px 20px -5px rgba(225, 29, 72, 0.4);
-    }
-    .btn-gradient:hover {
-      opacity: 0.95;
-      box-shadow: 0 12px 24px -4px rgba(38, 129, 247, 0.836);
-    }
-    /* ปุ่มแชทลอยอยู่มุมขวาล่างตลอดเวลา */
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบแจ้งเตือนไฟป่า GISTDA + ESP32</title>
 
-/* ปุ่มแชทลอยติดมุมขวาล่าง */
-.wildfire-chat-btn {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    width: 200px;
-    height: 58px;
-    background-color: #b61616;
-    color: white;
-    border-radius: 50px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 15px;
-    z-index: 9999;
-    transition: transform 0.2s, background-color 0.2s;
-}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+ integrity="sha256-p4NxAoJBhIINfQ3X3Qn7cY8pV5m1v2nYxKj9J3K2f4M="
+ crossorigin=""/>
 
-.wildfire-chat-btn:hover {
-    transform: scale(1.1);
-    background-color: #d35400;
-}
-
-/* กล่องหน้าต่างแชท */
-.wildfire-widget-box {
-    display: none;
-    position: fixed;
-    bottom: 95px;
-    right: 25px;
-    width: 330px;
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.25);
-    z-index: 10000;
-    overflow: hidden;
-    animation: slideUpWf 0.3s ease-out;
-}
-
-@keyframes slideUpWf {
-    from { transform: translateY(15px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.wf-chat-header {
-    background-color: #2c3e50;
-    color: white;
-    padding: 12px 15px;
-    font-weight: bold;
-    font-size: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.wf-close-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-/* เมนูสลับแท็บ */
-.wf-tab-menu {
-    display: flex;
-    background-color: #f1f1f1;
-    border-bottom: 1px solid #ddd;
-}
-
-.wf-tab-btn {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    background: none;
-    font-size: 13px;
-    cursor: pointer;
-    font-weight: bold;
-    color: #666;
-}
-
-.wf-tab-btn.active {
-    background: #ffffff;
-    color: #e67e22;
-    border-bottom: 2px solid #e67e22;
-}
-
-.wf-tab-content {
-    padding: 15px;
-    max-height: 350px;
-    overflow-y: auto;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.wf-tab-content ul {
-    padding-left: 18px;
-    margin: 0;
-}
-
-.wf-tab-content li {
-    margin-bottom: 8px;
-}
-  </style>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7f5;color:#17221b}
+header{background:#173f2a;color:#fff;padding:22px 18px}
+header h1{margin:0 0 6px;font-size:26px}
+header p{margin:0;opacity:.9}
+.container{max-width:1200px;margin:18px auto;padding:0 14px}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
+.card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin-bottom:16px}
+.card h2{font-size:18px;margin:0 0 12px}
+label{display:block;font-weight:700;margin:10px 0 5px}
+input,select,button{width:100%;padding:10px;border:1px solid #cbd5ce;border-radius:8px;font-size:14px}
+button{cursor:pointer;font-weight:700;border:0;background:#1f7a4d;color:#fff;margin-top:8px}
+button.secondary{background:#5c6b63}
+button.danger{background:#b42318}
+button.demo{background:#c77b00}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.status{padding:15px;border-radius:12px;text-align:center;font-size:21px;font-weight:800}
+.status.safe{background:#dff5e7;color:#146c36}
+.status.alert{background:#ffe0e0;color:#a00}
+.small{font-size:12px;color:#66736b;line-height:1.5}
+.value{font-weight:700}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi div{background:#f1f5f2;border-radius:10px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:20px;margin-top:3px}
+#map{height:520px;border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px;border-bottom:1px solid #e5e9e6;text-align:left}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge.real{background:#e4f0ff;color:#165da8}
+.badge.demo{background:#fff0cf;color:#875500}
+pre{white-space:pre-wrap;background:#111;color:#ddd;padding:10px;border-radius:8px;font-size:12px;max-height:180px;overflow:auto}
+.warning{background:#fff5d6;border-left:4px solid #c77b00;padding:10px;border-radius:7px;font-size:12px;line-height:1.5}
+@media(max-width:850px){.grid{grid-template-columns:1fr}#map{height:400px}.kpi{grid-template-columns:1fr}}
+</style>
 </head>
-<body class="bg-slate-100 min-h-screen flex flex-col justify-between relative">
-  <!-- ปุ่มแชทลอยมุมขวาล่าง -->
-   
-   <!-- ปุ่มแชทวงกลมลอยมุมขวาล่าง -->
-<div class="wildfire-chat-btn" onclick="toggleWildfireWidget()">
-    <span>ข้อควรปฏิบัติเมื่อเกิดไฟป่า</span>
-  <!-- ปุ่มทรงรีสีส้มพร้อมข้อความและไอคอน -->
-</div>
 
-<!-- กล่องแชทป๊อปอัป -->
-<div class="wildfire-widget-box" id="wildfireWidgetBox">
-    <!-- ส่วนหัวหน้าต่างแชท -->
-    <div class="wf-chat-header">
-        <span> ศูนย์แจ้งเหตุ & ข้อปฏิบัติไฟป่า</span>
-        <button class="wf-close-btn" onclick="toggleWildfireWidget()">✕</button>
-    </div>
+<body>
+<header>
+  <h1>🔥 ระบบแจ้งเตือนไฟป่า</h1>
+  <p>GISTDA VIIRS → เว็บไซต์ → ESP32 → Pilot Lamp / Buzzer / LCD</p>
+</header>
 
-    <!-- เมนูแท็บสลับหน้า -->
-    <div class="wf-tab-menu">
-        <button class="wf-tab-btn active" id="tabInfoBtn" onclick="switchWfTab('info')">📖 ข้อปฏิบัติตน</button>
-        <button class="wf-tab-btn" id="tabReportBtn" onclick="switchWfTab('report')">📸 ถ่ายรูปแจ้งเหตุ</button>
-    </div>
+<div class="container">
 
-    <!-- เนื้อหาแท็บ 1: คำแนะนำไฟป่า -->
-    <div class="wf-tab-content" id="wfTabInfo">
-        <p style="margin-top:0; font-weight:bold; color:#d35400;">ข้อควรปฏิบัติตนเมื่อเกิดไฟป่า:</p>
-        <ul>
-            <li><b>ตั้งสติ</b> และประเมินสถานการณ์ความรุนแรงและทิศทางของลม</li>
-            <li><b>รีบอพยพ</b> ออกจากพื้นที่เหนือลมหรือพื้นที่เสี่ยงภัยไปยังจุดปลอดภัยทันที</li>
-            <li><b>สวมหน้ากากอนามัย</b> หรือใช้ผ้าชุบน้ำหมาดๆ ปิดจมูกและปาก เพื่อป้องกันการสูดดมควันพิษเข้าสู่ร่างกาย</li>
-            <li><b>หลีกเลี่ยงการอยู่ในที่โล่งแจ้ง</b> หรือทำกิจกรรมกลางแจ้งในพื้นที่ที่มีกลุ่มควันหนาแน่น</li>
-            <li><b>เตรียมแผนฉุกเฉิน</b> และดูแลเด็กหรือผู้สูงอายุในครอบครัวให้อยู่ในพื้นที่ปลอดภัย</li>
-        </ul>
-    </div>
-
-    <!-- เนื้อหาแท็บ 2: ถ่ายรูปแจ้งเหตุ & เจ้าหน้าที่ตรวจเช็ก -->
-    <div class="wf-tab-content" id="wfTabReport" style="display: none;">
-        <p style="margin-top:0; font-weight:bold; color:#c0392b;"> แจ้งเหตุไฟป่าตรงจุดที่คุณอยู่</p>
-        
-        <label style="font-size:13px;"><b>1. ถ่ายรูปพื้นที่เกิดเหตุ:</b></label>
-        <input type="file" id="wfPhotoInput" accept="image/*" capture="environment" onchange="previewWfImage(event)" style="margin: 8px 0; width:100%; font-size:12px;">
-        <img id="wfImagePreview" style="display:none; width:100%; max-height:150px; object-fit:cover; border-radius:6px; margin-bottom:8px;">
-
-        <div style="font-size:12px; color:#555; margin-bottom:10px;">
-             ระบบจะแนบพิกัด GPS ปัจจุบันของคุณไปพร้อมกับรูปภาพ
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>สถานะระบบ</h2>
+        <div id="statusBox" class="status safe">🟢 ไม่พบไฟป่าในรัศมีที่กำหนด</div>
+        <div class="kpi" style="margin-top:10px">
+          <div>จุดไฟที่พบ<b id="fireCount">0</b></div>
+          <div>จุดใกล้สุด<b id="nearestDistance">-</b></div>
+          <div>แหล่งข้อมูล<b id="sourceLabel">-</b></div>
         </div>
+      </div>
 
-        <button onclick="submitWfReport()" style="background:#e74c3c; color:white; border:none; padding:10px; border-radius:6px; width:100%; font-weight:bold; cursor:pointer;">
-             ส่งรายงานให้เจ้าหน้าที่
-        </button>
-
-        <!-- แสดงผลฝั่งเจ้าหน้าที่เมื่อมีรายการส่งเข้ามา -->
-        <div id="wfOfficerPanel" style="display:none; margin-top:15px; padding:10px; background:#f8f9fa; border:1px solid #ddd; border-radius:6px; font-size:13px;">
-            <b style="color:#2c3e50;">🛡️ มุมมองเจ้าหน้าที่ (ตรวจสอบเหตุจริง):</b>
-            <div id="wfReportDetail" style="margin-top:5px;"></div>
+      <div class="card">
+        <h2>⚙️ ตั้งค่าตำแหน่งและรัศมี</h2>
+        <div class="row">
+          <div>
+            <label>Latitude บอร์ด</label>
+            <input id="boardLat" type="number" step="0.000001" value="19.9105">
+          </div>
+          <div>
+            <label>Longitude บอร์ด</label>
+            <input id="boardLng" type="number" step="0.000001" value="99.8406">
+          </div>
         </div>
-    </div>
-</div>
-  <!-- ================= หน้าต่างเด้งเลือกประเภทผู้ใช้งาน (เด้งทันทีที่เปิดหน้าแรก) ================= -->
-  <div id="auth-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-blur-backdrop">
-    
-    <div class="custom-card w-full max-w-lg p-8 md:p-10 text-center relative">
-      
-      <!-- ปุ่มปิด Modal (เพื่อเข้าใช้งานแผนที่ในฐานะประชาชน) -->
-      <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-xl font-bold p-1 transition">
-        ✕
-      </button>
-
-      <!-- Badge ด้านบน -->
-      <div class="inline-block px-4 py-1.5 rounded-full border border-rose-300 bg-rose-50 text-rose-500 text-[11px] font-bold tracking-wider uppercase mb-5">
-        GISTDA LINKED FIRE DASHBOARD
+        <label>รัศมีแจ้งเตือน (กม.)</label>
+        <input id="radiusKm" type="number" min="0.1" step="0.1" value="20">
+        <button onclick="applySettings()">ใช้ค่าตั้งต้น</button>
       </div>
 
-      <!-- หัวข้อหลัก -->
-      <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2 tracking-tight">
-        การพัฒนาระบบเฝ้าระวังไฟป่า
-      </h2>
-      <p class="text-slate-400 text-sm mb-7">
-        กรุณาเลือกประเภทบัญชีผู้ใช้งานเพื่อเข้าสู่ระบบ
-      </p>
-
-      <!-- Selector สลับประเภทผู้ใช้งาน -->
-      <div class="bg-rose-50/60 p-1.5 rounded-full flex border border-rose-100 mb-6">
-        <button onclick="selectUserRole('user')" id="tab-role-user" class="flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 bg-white text-rose-600 shadow-sm border border-rose-100">
-          ประชาชนทั่วไป
-        </button>
-        <button onclick="selectUserRole('officer')" id="tab-role-officer" class="flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700">
-          เจ้าหน้าที่ปฏิบัติการ
-        </button>
+      <div class="card">
+        <h2>📡 GISTDA API</h2>
+        <label>API URL</label>
+        <input id="apiUrl" value="https://api-gateway.gistda.or.th/api/2.0/resources/features/viirs/1day">
+        <label>API Key</label>
+        <input id="apiKey" type="password" placeholder="วาง API Key ของคุณที่นี่">
+        <label>ประเทศ (ct_tn)</label>
+        <input id="country" value="ราชอาณาจักรไทย">
+        <div class="row">
+          <div>
+            <label>Limit</label>
+            <input id="limit" type="number" value="1000" min="1">
+          </div>
+          <div>
+            <label>Offset</label>
+            <input id="offset" type="number" value="0" min="0">
+          </div>
+        </div>
+        <button onclick="loadGistdaData()">ดึงข้อมูล GISTDA ตอนนี้</button>
+        <p class="small">ข้อมูลที่ระบบอ่านจาก GeoJSON: <b>features → geometry.coordinates → properties</b></p>
+        <div class="warning">
+          ⚠️ ไม่ควรฝัง API Key จริงไว้ใน GitHub Pages แบบถาวร เพราะผู้เข้าชมสามารถเห็น/นำไปใช้ได้
+          สำหรับการส่งงานจริง แนะนำให้ใช้ Backend/Proxy เป็นตัวกลาง
+        </div>
       </div>
 
-      <!-- ช่องกรอกรหัสยืนยันเจ้าหน้าที่ (แสดงเฉพาะเมื่อเลือกเจ้าหน้าที่) -->
-      <div id="officer-code-container" class="mb-5 hidden text-left">
-        <label class="block text-xs font-bold text-slate-700 mb-1.5"> รหัสยืนยันสิทธิ์เจ้าหน้าที่ (Security Code):</label>
-        <input type="password" id="officer-code-input" placeholder="กรอกรหัสเจ้าหน้าที่ (รหัสทดสอบ: 1362)" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-rose-500 transition">
-        <p class="text-[11px] text-slate-400 mt-1">* สำหรับการทดสอบทดลองใช้รหัส: <b class="text-rose-600">1362</b> หรือ <b class="text-rose-600">1784</b></p>
-      </div>
-
-      <!-- กล่องคำอธิบายรายละเอียดประเภทบัญชี -->
-      <div class="bg-rose-50/40 rounded-2xl p-5 border border-rose-100 text-left mb-8 transition-all">
-        <p id="role-description" class="text-slate-600 text-xs md:text-sm leading-relaxed">
-          เข้าใช้งานสำหรับประชาชน ตรวจสอบจุดไฟป่ารายตำบล-อำเภอ ประมวลผลแจ้งเตือนการอพยพ พร้อมเข้าถึงข้อมูลจุดความร้อนจาก GISTDA (ไม่สามารถใช้ระบบนำทางพื้นที่ปฏิบัติการได้)
+      <div class="card">
+        <h2>🔌 เชื่อม ESP32</h2>
+        <label>ESP32 URL</label>
+        <input id="esp32Url" value="http://192.168.1.100">
+        <button onclick="sendCurrentStateToEsp32()">ส่งสถานะปัจจุบันไป ESP32</button>
+        <button class="secondary" onclick="testEsp32()">ทดสอบเชื่อมต่อ ESP32</button>
+        <p id="esp32Status" class="small">ยังไม่ได้ทดสอบ</p>
+        <p class="small">
+          เว็บไซต์จะส่ง POST ไปที่ <code>/api/alert</code> ในรูปแบบ JSON
         </p>
       </div>
 
-      <!-- ปุ่มเข้าสู่ระบบ -->
-      <button onclick="executeLogin()" id="btn-login-submit" class="w-full py-4 text-white font-bold rounded-2xl text-base btn-gradient transition-transform active:scale-95">
-        เข้าสู่ระบบ (ประชาชนทั่วไป)
-      </button>
-
+      <div class="card">
+        <h2>🎯 โหมดสาธิตสำหรับวันแข่ง</h2>
+        <button class="demo" onclick="simulateFire()">🔥 จำลองพบไฟป่าใกล้บอร์ด</button>
+        <button class="secondary" onclick="clearSimulation()">🟢 ยกเลิกการจำลอง</button>
+        <p class="small">
+          โหมดจำลองไม่แก้ข้อมูล GISTDA จริง แต่จะสร้างจุดไฟจำลองใกล้ตำแหน่งบอร์ด
+          เพื่อทดสอบไฟแดง/เขียว, buzzer, LCD และ ESP32
+        </p>
+      </div>
     </div>
 
-  </div>
-
-  <!-- Header -->
-  <header class="bg-rose-700 text-white p-4 shadow-lg sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto flex justify-between items-center gap-2">
-      <div class="flex items-center gap-3">
-        <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
-         การพัฒนาระบบเฝ้าระวังไฟป่า
-        </h1>
-     
+    <div>
+      <div class="card">
+        <h2>🗺️ แผนที่จุดความร้อน</h2>
+        <div id="map"></div>
       </div>
 
-      <nav class="flex items-center gap-3 text-sm font-medium">
-        <!-- แสดงสถานะผู้ใช้งาน -->
-        <span id="user-status-badge" class="text-xs bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/30">
-          👤 สถานะ: ประชาชนทั่วไป
-        </span>
-        <button onclick="openAuthModal()" class="px-3.5 py-1.5 rounded-lg bg-white text-rose-700 transition hover:bg-rose-50 shadow-sm font-bold flex items-center gap-1.5">
-          เข้าสู่ระบบ / ยืนยันสิทธิ์
-        </button>
-      </nav>
-    </div>
-  </header>
-
-  <div class="max-w-7xl mx-auto px-4 pt-4 w-full">
-    <div class="glass-card p-6 rounded-3xl shadow-sm border border-indigo-100 space-y-4 bg-white">
-      <div class="flex items-center justify-between border-b border-indigo-100/60 pb-3">
-        <div class="flex items-center space-x-2">
-          <div class="w-7 h-7 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-            
-          </div>
-          <div>
-            <h3 class="font-bold text-sm text-slate-800">ระบบ AI วิเคราะห์ทิศทางและคาดการณ์การลุกลามของไฟป่า (AI Predictive Engine)</h3>
-            <p class="text-[11px] text-slate-500">วิเคราะห์ความลุ่มลึกจากกระแสลม อุณหภูมิพื้นผิว และอัตราความหนาแน่นจุดความร้อน</p>
-          </div>
+      <div class="card">
+        <h2>🔥 รายการจุดไฟป่า</h2>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>สถานะ</th>
+                <th>ตำแหน่ง</th>
+                <th>ระยะ (กม.)</th>
+                <th>วันที่</th>
+                <th>เวลา</th>
+                <th>จังหวัด</th>
+                <th>FRP</th>
+              </tr>
+            </thead>
+            <tbody id="fireTable">
+              <tr><td colspan="7">ยังไม่มีข้อมูล</td></tr>
+            </tbody>
+          </table>
         </div>
-        <button onclick="fetchGistdaFireData()" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-xs font-medium shadow-md shadow-indigo-100 transition">
-           ประมวลผล AI ซ้ำ
-        </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-        <!-- AI Card 1: Risk Assessment -->
-        <div class="bg-white/80 p-4 rounded-2xl border border-indigo-50 space-y-2">
-          <div class="text-slate-400 font-medium text-[11px]">แนวโน้มการลุกลาม 24 ชม. ข้างหน้า</div>
-          <div id="aiSpreadForecast" class="text-slate-700 font-semibold leading-relaxed">
-            คาดว่าจุดความร้อนแถบ ต.แม่เจดีย์ มีแนวโน้มลุกลามขยายตัวเพิ่มขึ้น 15% ตามทิศทางลมพัดผ่านช่วงเย็น
-          </div>
-        </div>
-        <!-- AI Card 2: Wind & Direction -->
-        <div class="bg-white/80 p-4 rounded-2xl border border-indigo-50 space-y-2">
-          <div class="text-slate-400 font-medium text-[11px]">ปัจจัยสภาพอากาศ & ทิศทางลม</div>
-          <div id="aiWindAnalysis" class="text-slate-700 font-semibold leading-relaxed">
-            ความเร็วลมเฉลี่ย 12 กม./ชม. ความชื้นสัมพัทธ์ 28% (เสี่ยงไฟลุกลามระดับสูง)
-          </div>
-        </div>
-        <!-- AI Card 3: Priority Recommendation -->
-        <div class="bg-white/80 p-4 rounded-2xl border border-indigo-50 space-y-2">
-          <div class="text-slate-400 font-medium text-[11px]">ข้อเสนอแนะเชิงกลยุทธ์จาก AI</div>
-          <div id="aiRecommendation" class="text-slate-700 font-semibold leading-relaxed">
-            ควรจัดส่งทีมดับไฟป่าเข้าตรึงแนวกันไฟทิศตะวันออกเฉียงเหนือ ก่อนเวลา 18:00 น.
-          </div>
-        </div>
+      <div class="card">
+        <h2>📤 Payload ล่าสุดที่ส่งให้ ESP32</h2>
+        <pre id="payloadBox">{}</pre>
+      </div>
+
+      <div class="card">
+        <h2>ℹ️ บันทึกระบบ</h2>
+        <pre id="logBox">พร้อมใช้งาน</pre>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- ================= หน้าแรก: แผนที่เฝ้าระวัง & รายชื่อติดต่อ (ระบบหลัก) ================= -->
-  <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow w-full">
-    
-    <section class="lg:col-span-2 space-y-4">
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-          <div>
-            <h2 class="text-lg font-bold text-slate-800">แผนที่เฝ้าระวังไฟป่า ระดับความรุนแรง & ประเมินการลุกลาม</h2>
-            <p class="text-xs text-slate-500">คลิกที่จุดไฟป่าบนแผนที่ เพื่อดูพิกัด/อำเภอ/ตำบล ระดับความรุนแรง และการลุกลาม</p>
-          </div>
-          
-          <div class="flex items-center gap-2">
-            <button onclick="toggleMapType()" id="mapTypeBtn" class="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition">
-              สลับไปแผนที่ถนน
-            </button>
-            <button onclick="fetchGistdaFireData()" class="text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition">
-               อัปเดตข้อมูล GISTDA
-            </button>
-          </div>
-        </div>
-        
-        <div id="map" class="rounded-xl border"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+ crossorigin=""></script>
 
-        <div class="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 bg-red-600 rounded-full inline-block"></span>
-            <span>ระดับ 3: ไฟป่ารุนแรงมาก (ลุกลามเร็ว / >335K)</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 bg-amber-500 rounded-full inline-block"></span>
-            <span>ระดับ 2: ปานกลาง / เฝ้าระวัง</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 bg-emerald-500 rounded-full inline-block"></span>
-            <span>ระดับ 1: ปลอดภัย / ควบคุมได้แล้ว</span>
-          </div>
-        </div>
-      </div>
+<script>
+const state = {
+  fires: [],
+  simulation: false,
+  lastPayload: null,
+  boardMarker: null,
+  fireLayer: null,
+  radiusCircle: null
+};
 
-      <div class="grid grid-cols-3 gap-4">
-        <div class="bg-rose-50 p-4 rounded-xl border border-rose-200 text-center">
-          <p class="text-xs text-rose-600 font-medium">จุดความร้อนทั้งหมด (GISTDA)</p>
-          <p id="stat-hotspot" class="text-2xl font-bold text-rose-700">กำลังโหลด...</p>
-        </div>
-        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-center">
-          <p class="text-xs text-amber-600 font-medium">พื้นที่ลุกลามเร่งด่วน</p>
-          <p id="stat-warning" class="text-2xl font-bold text-amber-700">0</p>
-        </div>
-        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-center">
-          <p class="text-xs text-emerald-600 font-medium">สถานะภาพรวม</p>
-          <p id="stat-status" class="text-sm font-bold text-emerald-700 mt-1">เฝ้าระวังระดับสูง</p>
-        </div>
-      </div>
-    </section>
+const map = L.map('map').setView([19.9105, 99.8406], 7);
 
-    <section class="space-y-4">
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-slate-800 mb-1">📞 ค้นหาเบอร์ติดต่อเจ้าหน้าที่ในพื้นที่</h2>
-        <p class="text-xs text-slate-500 mb-4">ค้นหาหน่วยงานรับแจ้งเหตุ สายด่วน และสถานีควบคุมไฟป่าตามจังหวัด</p>
-        
-        <div class="mb-4">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">เลือกจังหวัด (ครบ 77 จังหวัด):</label>
-          <select id="provinceSelect" onchange="filterContacts()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-rose-500 outline-none">
-            <option value="ALL">-- ทุกจังหวัด (สายด่วนฉุกเฉินส่วนกลาง) --</option>
-            <optgroup label="ภาคเหนือ">
-              <option value="เชียงราย" selected>เชียงราย</option>
-              <option value="เชียงใหม่">เชียงใหม่</option>
-              <option value="น่าน">น่าน</option>
-              <option value="พะเยา">พะเยา</option>
-              <option value="แพร่">แพร่</option>
-              <option value="แม่ฮ่องสอน">แม่ฮ่องสอน</option>
-              <option value="ลำปาง">ลำปาง</option>
-              <option value="ลำพูน">ลำพูน</option>
-              <option value="อุตรดิตถ์">อุตรดิตถ์</option>
-            </optgroup>
-            <optgroup label="ภาคตะวันออกเฉียงเหนือ">
-              <option value="กาฬสินธุ์">กาฬสินธุ์</option><option value="ขอนแก่น">ขอนแก่น</option><option value="ชัยภูมิ">ชัยภูมิ</option><option value="นครพนม">นครพนม</option><option value="นครราชสีมา">นครราชสีมา</option><option value="บึงกาฬ">บึงกาฬ</option><option value="บุรีรัมย์">บุรีรัมย์</option><option value="มหาสารคาม">มหาสารคาม</option><option value="มุกดาหาร">มุกดาหาร</option><option value="ยโสธร">ยโสธร</option><option value="ร้อยเอ็ด">ร้อยเอ็ด</option><option value="เลย">เลย</option><option value="ศรีสะเกษ">ศรีสะเกษ</option><option value="สกลนคร">สกลนคร</option><option value="สุรินทร์">สุรินทร์</option><option value="หนองคาย">หนองคาย</option><option value="หนองบัวลำภู">หนองบัวลำภู</option><option value="อำนาจเจริญ">อำนาจเจริญ</option><option value="อุดรธานี">อุดรธานี</option><option value="อุบลราชธานี">อุบลราชธานี</option>
-            </optgroup>
-            <optgroup label="ภาคกลาง">
-              <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option><option value="กำแพงเพชร">กำแพงเพชร</option><option value="ชัยนาท">ชัยนาท</option><option value="นครนายก">นครนายก</option><option value="นครปฐม">นครปฐม</option><option value="นครสวรรค์">นครสวรรค์</option><option value="นนทบุรี">นนทบุรี</option><option value="ปทุมธานี">ปทุมธานี</option><option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option><option value="พิจิตร">พิจิตร</option><option value="พิษณุโลก">พิษณุโลก</option><option value="เพชรบูรณ์">เพชรบูรณ์</option><option value="ลพบุรี">ลพบุรี</option><option value="สมุทรปราการ">สมุทรปราการ</option><option value="สมุทรสงคราม">สมุทรสงคราม</option><option value="สมุทรสาคร">สมุทรสาคร</option><option value="สระบุรี">สระบุรี</option><option value="สิงห์บุรี">สิงห์บุรี</option><option value="สุโขทัย">สุโขทัย</option><option value="สุพรรณบุรี">สุพรรณบุรี</option><option value="อ่างทอง">อ่างทอง</option><option value="อุทัยธานี">อุทัยธานี</option>
-            </optgroup>
-            <optgroup label="ภาคตะวันออก">
-              <option value="จันทบุรี">จันทบุรี</option><option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ชลบุรี">ชลบุรี</option><option value="ตราด">ตราด</option><option value="ปราจีนบุรี">ปราจีนบุรี</option><option value="ระยอง">ระยอง</option><option value="สระแก้ว">สระแก้ว</option>
-            </optgroup>
-            <optgroup label="ภาคตะวันตก">
-              <option value="กาญจนบุรี">กาญจนบุรี</option><option value="ตาก">ตาก</option><option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option><option value="เพชรบุรี">เพชรบุรี</option><option value="ราชบุรี">ราชบุรี</option>
-            </optgroup>
-            <optgroup label="ภาคใต้">
-              <option value="กระบี่">กระบี่</option><option value="ชุมพร">ชุมพร</option><option value="ตรัง">ตรัง</option><option value="นครศรีธรรมราช">นครศรีธรรมราช</option><option value="นราธิวาส">นราธิวาส</option><option value="ปัตตานี">ปัตตานี</option><option value="พังงา">พังงา</option><option value="พัทลุง">พัทลุง</option><option value="ภูเก็ต">ภูเก็ต</option><option value="ยะลา">ยะลา</option><option value="ระนอง">ระนอง</option><option value="สงขลา">สงขลา</option><option value="สตูล">สตูล</option><option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option>
-            </optgroup>
-          </select>
-        </div>
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-        <div id="contactList" class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
-          <!-- เติมโดย JS -->
-        </div>
-      </div>
-    </section>
+state.fireLayer = L.layerGroup().addTo(map);
 
-  </main>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <script>
-    // เปิด-ปิด กล่องแชท
-function toggleWildfireWidget() {
-    const box = document.getElementById('wildfireWidgetBox');
-    box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+function log(msg) {
+  const box = document.getElementById('logBox');
+  const time = new Date().toLocaleTimeString('th-TH');
+  box.textContent = '[' + time + '] ' + msg + '\\n' + box.textContent;
 }
 
-// สลับแท็บระหว่าง "ข้อปฏิบัติตน" และ "ถ่ายรูปแจ้งเหตุ"
-function switchWfTab(tabName) {
-    const tabInfo = document.getElementById('wfTabInfo');
-    const tabReport = document.getElementById('wfTabReport');
-    const btnInfo = document.getElementById('tabInfoBtn');
-    const btnReport = document.getElementById('tabReportBtn');
-
-    if (tabName === 'info') {
-        tabInfo.style.display = 'block';
-        tabReport.style.display = 'none';
-        btnInfo.classList.add('active');
-        btnReport.classList.remove('active');
-    } else {
-        tabInfo.style.display = 'none';
-        tabReport.style.display = 'block';
-        btnReport.classList.add('active');
-        btnInfo.classList.remove('active');
-    }
+function getSettings() {
+  return {
+    lat: Number(document.getElementById('boardLat').value),
+    lng: Number(document.getElementById('boardLng').value),
+    radius: Number(document.getElementById('radiusKm').value),
+    apiUrl: document.getElementById('apiUrl').value.trim(),
+    apiKey: document.getElementById('apiKey').value.trim(),
+    country: document.getElementById('country').value.trim(),
+    limit: Number(document.getElementById('limit').value),
+    offset: Number(document.getElementById('offset').value),
+    esp32Url: document.getElementById('esp32Url').value.trim().replace(/\\/$/, '')
+  };
 }
 
-// แสดงตัวอย่างรูปถ่าย
-function previewWfImage(event) {
-    const preview = document.getElementById('wfImagePreview');
-    if (event.target.files && event.target.files[0]) {
-        preview.src = URL.createObjectURL(event.target.files[0]);
-        preview.style.display = 'block';
-    }
+function applySettings() {
+  const s = getSettings();
+  if (!Number.isFinite(s.lat) || !Number.isFinite(s.lng) || !Number.isFinite(s.radius)) {
+    alert('กรุณาตรวจสอบ Latitude / Longitude / รัศมี');
+    return;
+  }
+  updateMap();
+  evaluateAndDisplay();
+  log('อัปเดตตำแหน่งบอร์ดและรัศมีแจ้งเตือนแล้ว');
 }
 
-// ส่งรายงานแจ้งเหตุ
-function submitWfReport() {
-    const fileInput = document.getElementById('wfPhotoInput');
-    const previewImg = document.getElementById('wfImagePreview');
-    
-    if (!fileInput.files || fileInput.files.length === 0) {
-        alert('กรุณาถ่ายรูปหรือแนบรูปภาพก่อนส่งครับ');
-        return;
-    }
-
-    // ดึงค่า lat/lng จากระบบตำแหน่งหลักที่มีในหน้าเว็บเดิม
-    // (หากใช้ชื่อตัวแปรอื่น สามารถเปลี่ยน lat, lng ให้ตรงกับในโค้ดเดิมได้ครับ)
-    const currentLat = typeof lat !== 'undefined' ? lat : 19.9071;
-    const currentLng = typeof lng !== 'undefined' ? lng : 99.8325;
-    const reportTime = new Date().toLocaleTimeString('th-TH');
-
-    alert('✅ ส่งภาพถ่ายและพิกัด GPS ให้เจ้าหน้าที่เรียบร้อยแล้ว!');
-
-    // แสดงข้อมูลในส่วนของเจ้าหน้าที่
-    const officerPanel = document.getElementById('wfOfficerPanel');
-    const reportDetail = document.getElementById('wfReportDetail');
-
-    officerPanel.style.display = 'block';
-    reportDetail.innerHTML = `
-        <p style="margin:3px 0;"><b>เวลา:</b> ${reportTime} น.</p>
-        <p style="margin:3px 0;"><b>พิกัด:</b> ${currentLat}, ${currentLng}</p>
-        <img src="${previewImg.src}" style="width:100%; height:100px; object-fit:cover; border-radius:4px; margin:5px 0;">
-        
-        <a href="https://firms.modaps.eosdis.nasa.gov/map/#d:24hrs;m:advanced;col:fire_archive_VIIRS_NRT;@${currentLng},${currentLat},14z" target="_blank" style="display:block; text-align:center; background:#d35400; color:white; padding:6px; text-decoration:none; border-radius:4px; margin:5px 0; font-weight:bold;">
-             เช็กจุดความร้อน NASA
-        </a>
-        
-        <div style="display:flex; gap:5px; margin-top:5px;">
-            <button onclick="confirmWfEvent(true)" style="flex:1; background:#27ae60; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">✅ เหตุจริง</button>
-            <button onclick="confirmWfEvent(false)" style="flex:1; background:#c0392b; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">❌ แจ้งเท็จ</button>
-        </div>
-    `;
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2-lat1);
+  const dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-// ฟังก์ชันเจ้าหน้าที่กดอนุมัติ/ปฏิเสธ
-function confirmWfEvent(isReal) {
-    if (isReal) {
-        alert('✅ ยืนยันเหตุจริง! ส่งพิกัดไปยังทีมดับไฟเรียบร้อยแล้ว');
-    } else {
-        alert('❌ ปฏิเสธการแจ้งเหตุ ทำการยกเลิกเรียบร้อย');
-    }
+function normalizeFeature(f, source='GISTDA') {
+  const p = f.properties || {};
+  const c = (f.geometry && Array.isArray(f.geometry.coordinates))
+    ? f.geometry.coordinates : [];
+
+  if (c.length < 2) return null;
+
+  // GeoJSON = [longitude, latitude]
+  const lng = Number(c[0]);
+  const lat = Number(c[1]);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+  return {
+    id: f.id || p._id || Math.random().toString(36).slice(2),
+    lat, lng,
+    date: p.acq_date || p.acqDate || '-',
+    time: p.acq_time || p.acqTime || '-',
+    province: p.changwat || p.changwat_tn || p.province || '-',
+    amphoe: p.amp_tn || p.amphoe || p.ap_tn || p.ap_en || '-',
+    tambon: p.tam_tn || p.tambon || '-',
+    frp: p.frp ?? p.FRP ?? '-',
+    brightness: p.bright_ti4 ?? p.brightness ?? '-',
+    source
+  };
 }
-    function toggleWildfireChat() {
-    const chatBox = document.getElementById('wildfireChatBox');
-    if (chatBox.style.display === 'block') {
-        chatBox.style.display = 'none';
-    } else {
-        chatBox.style.display = 'block';
-    }
+
+function extractFeatures(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.features)) return data.features;
+  if (data.data && Array.isArray(data.data.features)) return data.data.features;
+  if (Array.isArray(data.data)) return data.data;
+  if (data.result && Array.isArray(data.result.features)) return data.result.features;
+  return [];
 }
-    // -------------------------------------------------------------
-    // 1. ฟังก์ชันเปิด-ปิด และสลับประเภทผู้ใช้งานใน Modal + ยืนยันรหัสเจ้าหน้าที่
-    // -------------------------------------------------------------
-    let selectedRole = 'user'; 
-    let isOfficerLoggedIn = false; // ตัวแปรเช็คสถานะการเข้าสู่ระบบของเจ้าหน้าที่
-    const validOfficerCodes = ['1362', '1784', 'admin', 'gistda']; // รหัสผ่านสำหรับเจ้าหน้าที่
 
-    function openAuthModal() {
-      document.getElementById('auth-modal').classList.remove('hidden');
-    }
+async function loadGistdaData() {
+  const s = getSettings();
 
-    function closeAuthModal() {
-      document.getElementById('auth-modal').classList.add('hidden');
-      setTimeout(() => map.invalidateSize(), 100);
-    }
+  if (!s.apiUrl) {
+    alert('กรุณาใส่ API URL');
+    return;
+  }
 
-    function selectUserRole(role) {
-      selectedRole = role;
-      const tabUser = document.getElementById('tab-role-user');
-      const tabOfficer = document.getElementById('tab-role-officer');
-      const desc = document.getElementById('role-description');
-      const btn = document.getElementById('btn-login-submit');
-      const codeContainer = document.getElementById('officer-code-container');
-
-      if (role === 'user') {
-        tabUser.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 bg-white text-rose-600 shadow-sm border border-rose-100";
-        tabOfficer.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700";
-        desc.innerText = "เข้าใช้งานสำหรับประชาชน ตรวจสอบจุดไฟป่ารายตำบล-อำเภอ ประมวลผลแจ้งเตือนการอพยพ พร้อมเข้าถึงข้อมูลจุดความร้อนจาก GISTDA (ไม่สามารถใช้ระบบนำทางพื้นที่ปฏิบัติการได้)";
-        btn.innerText = "เข้าสู่ระบบ (ประชาชนทั่วไป)";
-        codeContainer.classList.add('hidden');
-      } else {
-        tabOfficer.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 bg-white text-rose-600 shadow-sm border border-rose-100";
-        tabUser.className = "flex-1 py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-200 text-slate-500 hover:text-slate-700";
-        desc.innerText = "เข้าใช้งานสำหรับเจ้าหน้าที่ปฏิบัติการ สั่งการระงับเหตุ เข้าถึงระบบ GPS นำทางตรงไปยังจุดไฟป่าเพื่อดับไฟอย่างเร่งด่วน";
-        btn.innerText = "ยืนยันรหัสเข้าสู่ระบบ (เจ้าหน้าที่)";
-        codeContainer.classList.remove('hidden');
-      }
-    }
-
-    function executeLogin() {
-      const statusBadge = document.getElementById('user-status-badge');
-
-      if (selectedRole === 'officer') {
-        const inputCode = document.getElementById('officer-code-input').value.trim();
-        if (validOfficerCodes.includes(inputCode)) {
-          isOfficerLoggedIn = true;
-          alert('✅ ยืนยันรหัสเจ้าหน้าที่ถูกต้อง! ปลดล็อกระบบนำทางปฏิบัติการเรียบร้อยแล้ว');
-          statusBadge.innerHTML = ' สถานะ: เจ้าหน้าที่ปฏิบัติการ (ปลดล็อกระบบนำทางแล้ว)';
-          statusBadge.className = 'text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg border border-emerald-400 font-bold';
-          closeAuthModal();
-          fetchGistdaFireData(); // รีโหลดหมุดเพื่อแสดงปุ่มนำทาง
-        } else {
-          alert('❌ รหัสยืนยันเจ้าหน้าที่ไม่ถูกต้อง! (กรุณาลองรหัสทดสอบ: 1362)');
-          return;
-        }
-      } else {
-        isOfficerLoggedIn = false;
-        alert('ยินดีต้อนรับ! เข้าสู่ระบบในฐานะ "ประชาชนทั่วไป"');
-        statusBadge.innerHTML = '👤 สถานะ: ประชาชนทั่วไป';
-        statusBadge.className = 'text-xs bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/30';
-        closeAuthModal();
-        fetchGistdaFireData(); // รีโหลดหมุดเพื่อซ่อนปุ่มนำทาง
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 2. ฐานข้อมูลเบอร์ติดต่อเจ้าหน้าที่
-    // -------------------------------------------------------------
-    const baseContacts = [
-      { province: "ALL", name: "สายด่วนพิทักษ์ป่า (กรมอุทยานฯ)", phone: "1362", detail: "รับแจ้งเหตุไฟป่า ลักลอบตัดไม้ 24 ชม.", type: "emergency" },
-      { province: "ALL", name: "สายด่วนนิรภัย (กรมป้องกันฯ ปภ.)", phone: "1784", detail: "รับแจ้งเหตุภัยพิบัติและสาธารณภัยทั่วประเทศ", type: "emergency" },
-      { province: "ALL", name: "เหตุด่วนเหตุร้าย (ตำรวจ)", phone: "191", detail: "แจ้งเหตุฉุกเฉินความเดือดร้อนทั่วไป", type: "emergency" },
-      { province: "เชียงราย", name: "ศูนย์รับแจ้งเหตุไฟป่า จ.เชียงราย (สนง.ทรัพยากรฯ)", phone: "053-711651", detail: "ศาลากลางจังหวัดเชียงราย", type: "local" },
-      { province: "เชียงราย", name: "สถานีควบคุมไฟป่าแม่ปืม", phone: "053-711400", detail: "รับแจ้งเหตุไฟป่าพื้นที่ จ.เชียงราย-พะเยา", type: "station" },
-      { province: "เชียงใหม่", name: "ศูนย์อำนวยการป้องกันไฟป่า จ.เชียงใหม่", phone: "053-112236", detail: "ศาลากลางจังหวัดเชียงใหม่", type: "local" },
-      { province: "เชียงใหม่", name: "สถานีควบคุมไฟป่าภูพิงค์", phone: "053-210244", detail: "ดูแลพื้นที่ดอยสุเทพ-ปุย", type: "station" },
-      { province: "ลำปาง", name: "สถานีควบคุมไฟป่าเขาล้าน จ.ลำปาง", phone: "054-228300", detail: "อ.เมือง จ.ลำปาง", type: "station" },
-      { province: "น่าน", name: "ศูนย์ประสานงานป้องกันไฟป่า จ.น่าน", phone: "054-710220", detail: "ศาลากลางจังหวัดน่าน", type: "local" }
-    ];
-
-    // -------------------------------------------------------------
-    // 3. แผนที่ Leaflet & สลับดาวเทียม/ถนน
-    // -------------------------------------------------------------
-    const map = L.map('map').setView([19.9075, 99.8310], 11);
-
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, GISTDA'
-    });
-
-    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    });
-
-    satelliteLayer.addTo(map);
-    let isSatellite = true;
-
-    function toggleMapType() {
-      const btn = document.getElementById('mapTypeBtn');
-      if (isSatellite) {
-        map.removeLayer(satelliteLayer);
-        streetLayer.addTo(map);
-        btn.innerHTML = ' สลับไปแผนที่ดาวเทียม';
-        btn.className = 'text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition';
-        isSatellite = false;
-      } else {
-        map.removeLayer(streetLayer);
-        satelliteLayer.addTo(map);
-        btn.innerHTML = 'สลับไปแผนที่ถนน';
-        btn.className = 'text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg border font-medium shadow-sm transition';
-        isSatellite = true;
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 4. ดึงข้อมูลจุดความร้อนจาก GISTDA (ตรวจสอบสิทธิ์ปุ่มนำทาง)
-    // -------------------------------------------------------------
-    let hotspotLayerGroup = L.layerGroup().addTo(map);
-
-    async function fetchGistdaFireData() {
-      const hotspotStat = document.getElementById('stat-hotspot');
-      hotspotStat.innerText = 'กำลังโหลด...';
-      hotspotLayerGroup.clearLayers();
-
-      const gistdaEndpoint = 'https://fire.gistda.or.th/api/v1/hotspot/today'; 
-
-      try {
-        const response = await fetch(gistdaEndpoint);
-        if (!response.ok) throw new Error('CORS / Offline Fallback');
-        const data = await response.json();
-        renderHotspots(data.features || data.data || []);
-      } catch (error) {
-        const realGistdaData = [
-          { 
-            lat: 19.9038, lng: 99.8295, 
-            province_th: "เชียงราย", amphoe_th: "เมืองเชียงราย", tambon_th: "เวียง",
-            landmark: "ใกล้โรงพยาบาลเชียงรายประชานุเคราะห์ / ถ.สถานพยาบาล",
-            brightness: 345.2, confidence: 94,
-            severity_code: "LEVEL_3",
-            spread_prediction: "คาดว่าไฟจะลุกลามไปทางทิศตะวันออกเฉียงเหนือ (ชุมชนเจ็ดยอด) ในอีก 30-45 นาที"
-          },
-          { 
-            lat: 19.9200, lng: 99.8500, 
-            province_th: "เชียงราย", amphoe_th: "เมืองเชียงราย", tambon_th: "รอบเวียง",
-            landmark: "ใกล้สนามบินเก่า / เขาดอยทอง",
-            brightness: 328.0, confidence: 78,
-            severity_code: "LEVEL_2",
-            spread_prediction: "ทิศทางลมพัดไปทางทิศตะวันตก คาดว่าจะลุกลามในอีก 1.5 - 2 ชั่วโมง"
-          },
-          { 
-            lat: 19.5300, lng: 99.5100, 
-            province_th: "เชียงราย", amphoe_th: "เวียงป่าเป้า", tambon_th: "แม่เจดีย์",
-            landmark: "แนวเขตป่าสงวนแม่เจดีย์",
-            brightness: 348.1, confidence: 98,
-            severity_code: "LEVEL_3",
-            spread_prediction: "ลุกลามเร็วน้ำตกแม่เจดีย์ คาดเข้าเขตหมู่บ้านภายใน 30 นาที"
-          },
-          { 
-            lat: 18.9120, lng: 98.9210, 
-            province_th: "เชียงใหม่", amphoe_th: "แม่ริม", tambon_th: "โป่งแยง",
-            landmark: "อุทยานแห่งชาติดอยสุเทพ-ปุย KM.18",
-            brightness: 355.2, confidence: 96,
-            severity_code: "LEVEL_3",
-            spread_prediction: "ไฟลุกลามขึ้นยอดเขาอย่างเร็ว คาดเข้าเขตชุมชนภายใน 20 นาที"
-          }
-        ];
-        renderHotspots(realGistdaData);
-      }
-    }
-
-    function renderHotspots(items) {
-      let highRiskCount = 0;
-      document.getElementById('stat-hotspot').innerText = `${items.length} จุด`;
-
-      items.forEach(item => {
-        const props = item.properties || item;
-        const lat = item.geometry ? item.geometry.coordinates[1] : props.lat;
-        const lng = item.geometry ? item.geometry.coordinates[0] : props.lng;
-
-        if (!lat || !lng) return;
-
-        const province = props.province_th || "เชียงราย";
-        const district = props.amphoe_th || "เมืองเชียงราย";
-        const subdistrict = props.tambon_th || "เวียง";
-        const landmark = props.landmark || `บริเวณ ต.${subdistrict} อ.${district}`;
-        const brightness = props.brightness || 320;
-        const confidence = props.confidence || 80;
-
-        let severityText = "ระดับ 1: ปกติ / เฝ้าระวัง";
-        let color = '#10B981';
-        let badgeBg = '#D1FAE5';
-        let badgeColor = '#065F46';
-
-        if (brightness > 335 || props.severity_code === 'LEVEL_3') {
-          severityText = "🚨 ระดับ 3: รุนแรงมาก (ลุกลามเร็ว)";
-          color = '#DC2626';
-          badgeBg = '#FEE2E2';
-          badgeColor = '#991B1B';
-          highRiskCount++;
-        } else if (brightness > 320 || props.severity_code === 'LEVEL_2') {
-          severityText = "⚠️ ระดับ 2: ปานกลาง / เฝ้าระวัง";
-          color = '#F59E0B';
-          badgeBg = '#FEF3C7';
-          badgeColor = '#92400E';
-        }
-
-        const spreadPrediction = props.spread_prediction || "คาดว่าไฟจะลุกลามตามทิศทางลมในรัศมี 1 กม. ในอีก 1-2 ชั่วโมง";
-        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-
-        // สลับแสดงผลปุ่มนำทางตามสิทธิ์การเข้าสู่ระบบ
-        let navigationSection = '';
-        if (isOfficerLoggedIn) {
-          navigationSection = `
-            <a href="${googleMapsUrl}" target="_blank" style="display: block; background-color: #E11D48; color: white; text-align: center; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; margin-top: 8px;">
-              นำทางทีมช่วยเหลือ (Google Maps)
-            </a>
-          `;
-        } else {
-          navigationSection = `
-            <div style="background-color: #F1F5F9; color: #64748B; text-align: center; padding: 8px; border-radius: 6px; font-size: 11px; margin-top: 8px; border: 1px dashed #CBD5E1;">
-               เฉพาะเจ้าหน้าที่ที่ยืนยันรหัสแล้วเท่านั้น จึงจะใช้งานระบบนำทางได้
-            </div>
-          `;
-        }
-
-        const marker = L.circleMarker([lat, lng], {
-          color: '#FFFFFF',
-          weight: 2,
-          fillColor: color,
-          fillOpacity: 0.9,
-          radius: (color === '#DC2626') ? 12 : 9
-        });
-
-        marker.bindPopup(`
-          <div style="font-family: sans-serif; font-size: 13px; line-height: 1.5; max-width: 280px;">
-            <div style="margin-bottom: 6px;">
-              <span style="background-color:${badgeBg}; color:${badgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
-                ${severityText}
-              </span>
-            </div>
-            
-            <b style="font-size: 14px; color: #1E293B;">📍 ต.${subdistrict} อ.${district} จ.${province}</b><br>
-            
-            <div style="background-color: #F8FAFC; padding: 6px; border-radius: 6px; border: 1px solid #E2E8F0; margin: 6px 0;">
-              <b>จุดสังเกตใกล้เคียง:</b><br>
-              <span style="color: #334155;">${landmark}</span><br>
-              <span style="color: #64748B; font-size: 11px;">พิกัด: ${lat.toFixed(4)}, ${lng.toFixed(4)}</span>
-            </div>
-
-            <div style="font-size: 12px; margin: 4px 0;">
-              <b>พลังงานความร้อน:</b> <span style="color:#B91C1C; font-weight:bold;">${brightness} K</span><br>
-              <b>ความเชื่อมั่นดาวเทียม:</b> <span style="color:#047857; font-weight:bold;">${confidence}%</span>
-            </div>
-            
-            <div style="background-color: #FFF7ED; border-left: 3px solid #F97316; padding: 6px; margin: 6px 0; font-size: 11px;">
-              <b style="color: #C2410C;">⏳ ประเมินการลุกลาม:</b><br>
-              <span style="color: #9A3412;">${spreadPrediction}</span>
-            </div>
-            
-            <hr style="margin: 8px 0; border: 0; border-top: 1px solid #E2E8F0;">
-            
-            ${navigationSection}
-          </div>
-        `);
-
-        hotspotLayerGroup.addLayer(marker);
-      });
-
-      document.getElementById('stat-warning').innerText = `${highRiskCount} จุด`;
-    }
-
-    // -------------------------------------------------------------
-    // 5. แสดงผลข้อมูลเบอร์โทรเจ้าหน้าที่ตามจังหวัด
-    // -------------------------------------------------------------
-    function filterContacts() {
-      const selectedProvince = document.getElementById('provinceSelect').value;
-      const listContainer = document.getElementById('contactList');
-      listContainer.innerHTML = '';
-
-      let results = [];
-
-      if (selectedProvince === 'ALL') {
-        results = baseContacts.filter(item => item.province === 'ALL');
-      } else {
-        const emergencyNumbers = baseContacts.filter(item => item.province === 'ALL');
-        const localSpecific = baseContacts.filter(item => item.province === selectedProvince);
-        
-        if (localSpecific.length === 0) {
-          localSpecific.push({
-            province: selectedProvince,
-            name: `สำนักงานทรัพยากรธรรมชาติและสิ่งแวดล้อม จ.${selectedProvince}`,
-            phone: "1362",
-            detail: `หน่วยงานรับผิดชอบหลักด้านป่าไม้และไฟป่า ประจำจังหวัด${selectedProvince}`,
-            type: "local"
-          });
-          localSpecific.push({
-            province: selectedProvince,
-            name: `ศูนย์รับแจ้งเหตุ ปภ. จ.${selectedProvince}`,
-            phone: "1784",
-            detail: `ศูนย์ป้องกันและบรรเทาสาธารณภัย จ.${selectedProvince}`,
-            type: "local"
-          });
-        }
-
-        results = [...emergencyNumbers, ...localSpecific];
-      }
-
-      results.forEach(item => {
-        const card = document.createElement('div');
-        card.className = "p-3.5 rounded-xl border bg-slate-50 border-slate-200 flex flex-col gap-1 hover:border-rose-300 transition";
-        card.innerHTML = `
-          <div class="flex justify-between items-start">
-            <span class="font-bold text-sm text-slate-800">${item.name}</span>
-            <span class="text-[11px] px-2 py-0.5 rounded-full ${item.type === 'emergency' ? 'bg-rose-100 text-rose-700 font-semibold' : 'bg-slate-200 text-slate-700'}">
-              ${item.type === 'emergency' ? 'ฉุกเฉิน' : 'หน่วยงานพื้นที่'}
-            </span>
-          </div>
-          <p class="text-xs text-slate-500">${item.detail}</p>
-          <a href="tel:${item.phone}" class="mt-2 inline-flex items-center justify-center gap-1 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 py-2 px-3 rounded-lg text-center shadow-sm transition">
-            📞 โทรออก: ${item.phone}
-          </a>
-        `;
-        listContainer.appendChild(card);
-      });
-    }
-
-    // เริ่มทำงานเมื่อโหลดหน้าเว็บเรียบร้อย
-    window.onload = () => {
-      fetchGistdaFireData();
-      filterContacts();
-    };
-    // นำ Token ที่ได้จาก LINE Developers มาใส่ตรงนี้
-const CHANNEL_ACCESS_TOKEN = 'RUBd8/9caUrogxWv1jowOk2rmjYKlnTy7qCq+kU+K3a9UCJTNNQahfO1i7R6t67Oyi48E6tYDLRoeGgYdTVRIgFDd11rygmiGV1nlXA2SLTBYy51Ys2oYTuSR/XbCvdMfr3waP5KKZuqoHPt58v5DAdB04t89/1O/w1cDnyilFU=';
-
-// ใส่ User ID ของคุณ (ดูได้ในหน้า LINE Developers แท็บ Messaging API ตรงหัวข้อ Your user ID)
-const TARGET_USER_ID = 'U45e1158b2e7ef0508e59a88521e1f34b';
-
-async function sendLineNotification(messageText) {
   try {
-    const response = await fetch('https://api.line.me/v2/bot/message/push', {
+    log('กำลังดึงข้อมูล GISTDA VIIRS...');
+
+    const params = new URLSearchParams({
+      limit: String(s.limit || 1000),
+      offset: String(s.offset || 0)
+    });
+    if (s.country) params.set('ct_tn', s.country);
+
+    const url = s.apiUrl + (s.apiUrl.includes('?') ? '&' : '?') + params.toString();
+
+    const headers = { 'Accept': 'application/json' };
+    if (s.apiKey) headers['X-API-Key'] = s.apiKey;
+
+    const response = await fetch(url, { method:'GET', headers });
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status + ' ' + response.statusText);
+    }
+
+    const data = await response.json();
+    const features = extractFeatures(data);
+
+    const normalized = features.map(f => normalizeFeature(f, 'GISTDA')).filter(Boolean);
+
+    state.fires = normalized;
+    state.simulation = false;
+
+    evaluateAndDisplay();
+    log('GISTDA สำเร็จ: ได้ข้อมูล ' + normalized.length + ' จุด');
+
+  } catch (err) {
+    log('GISTDA Error: ' + err.message);
+    document.getElementById('sourceLabel').textContent = 'ERROR';
+    alert(
+      'ดึงข้อมูล GISTDA ไม่สำเร็จ\\n\\n' +
+      err.message +
+      '\\n\\nถ้า Swagger ของ GISTDA ใช้งานได้ แต่เว็บไซต์นี้ขึ้น Failed to fetch ' +
+      'อาจเป็นปัญหา CORS ของ API เมื่อเรียกจาก GitHub Pages'
+    );
+  }
+}
+
+function evaluateAndDisplay() {
+  const s = getSettings();
+
+  const fires = state.fires.map(f => ({
+    ...f,
+    distance: haversineKm(s.lat, s.lng, f.lat, f.lng)
+  })).sort((a,b) => a.distance - b.distance);
+
+  const nearest = fires[0] || null;
+  const alertFire = nearest && nearest.distance <= s.radius ? nearest : null;
+
+  updateStatus(alertFire, nearest, fires.length);
+  renderTable(fires);
+  updateMap(fires);
+
+  const payload = {
+    fire: !!alertFire,
+    distance_km: nearest ? Number(nearest.distance.toFixed(2)) : null,
+    lat: alertFire ? alertFire.lat : null,
+    lng: alertFire ? alertFire.lng : null,
+    source: state.simulation ? 'DEMO' : 'GISTDA_VIIRS',
+    province: alertFire ? alertFire.province : null,
+    date: alertFire ? alertFire.date : null,
+    time: alertFire ? alertFire.time : null,
+    radius_km: s.radius
+  };
+
+  state.lastPayload = payload;
+  document.getElementById('payloadBox').textContent = JSON.stringify(payload, null, 2);
+  document.getElementById('nearestDistance').textContent =
+    nearest ? nearest.distance.toFixed(2) + ' km' : '-';
+
+  if (alertFire) {
+    sendToEsp32(payload);
+  } else {
+    sendToEsp32(payload);
+  }
+}
+
+function updateStatus(alertFire, nearest, count) {
+  const box = document.getElementById('statusBox');
+  const source = state.simulation ? 'DEMO' : 'GISTDA VIIRS';
+
+  document.getElementById('fireCount').textContent = count;
+  document.getElementById('sourceLabel').textContent = source;
+
+  if (alertFire) {
+    box.className = 'status alert';
+    box.textContent = '🔴 แจ้งเตือน! พบไฟป่าในรัศมี';
+  } else {
+    box.className = 'status safe';
+    box.textContent = '🟢 ไม่พบไฟป่าในรัศมีที่กำหนด';
+  }
+}
+
+function renderTable(fires) {
+  const tbody = document.getElementById('fireTable');
+
+  if (!fires.length) {
+    tbody.innerHTML = '<tr><td colspan="7">ไม่พบข้อมูล</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = fires.slice(0, 200).map(f => {
+    const s = getSettings();
+    const danger = f.distance <= s.radius;
+    return `
+      <tr>
+        <td>${danger ? '<span class="badge" style="background:#ffdede;color:#a00">ใกล้บอร์ด</span>' : '<span class="badge" style="background:#e8eee9;color:#486052">ปกติ</span>'}</td>
+        <td>${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</td>
+        <td>${f.distance.toFixed(2)}</td>
+        <td>${f.date}</td>
+        <td>${f.time}</td>
+        <td>${f.province}</td>
+        <td>${f.frp}</td>
+      </tr>`;
+  }).join('');
+}
+
+function updateMap(fires=[]) {
+  const s = getSettings();
+
+  if (state.boardMarker) map.removeLayer(state.boardMarker);
+  if (state.radiusCircle) map.removeLayer(state.radiusCircle);
+
+  state.boardMarker = L.marker([s.lat, s.lng])
+    .addTo(map)
+    .bindPopup('<b>ตำแหน่ง ESP32</b><br>' + s.lat + ', ' + s.lng);
+
+  state.radiusCircle = L.circle([s.lat, s.lng], {
+    radius: s.radius * 1000,
+    fillOpacity: .08
+  }).addTo(map);
+
+  state.fireLayer.clearLayers();
+
+  fires.forEach(f => {
+    const danger = f.distance <= s.radius;
+    const marker = L.circleMarker([f.lat, f.lng], {
+      radius: danger ? 8 : 5
+    });
+
+    marker.bindPopup(
+      '<b>🔥 จุดไฟป่า</b><br>' +
+      'พิกัด: ' + f.lat.toFixed(5) + ', ' + f.lng.toFixed(5) + '<br>' +
+      'ระยะ: ' + f.distance.toFixed(2) + ' km<br>' +
+      'จังหวัด: ' + f.province + '<br>' +
+      'วันที่: ' + f.date + '<br>' +
+      'เวลา: ' + f.time + '<br>' +
+      'FRP: ' + f.frp
+    );
+
+    marker.addTo(state.fireLayer);
+  });
+
+  if (fires.length) {
+    const bounds = L.latLngBounds(fires.map(f => [f.lat, f.lng]).concat([[s.lat,s.lng]]));
+    map.fitBounds(bounds.pad(.15));
+  } else {
+    map.setView([s.lat, s.lng], 7);
+  }
+}
+
+async function sendToEsp32(payload) {
+  const s = getSettings();
+  if (!s.esp32Url) return;
+
+  try {
+    const response = await fetch(s.esp32Url + '/api/alert', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${CHANNEL_ACCESS_TOKEN}`
-      },
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+    document.getElementById('esp32Status').textContent =
+      'เชื่อมต่อสำเร็จ: ส่งสถานะล่าสุดแล้ว';
+  } catch (err) {
+    document.getElementById('esp32Status').textContent =
+      'ยังส่งไม่สำเร็จ: ' + err.message;
+  }
+}
+
+function sendCurrentStateToEsp32() {
+  if (!state.lastPayload) {
+    evaluateAndDisplay();
+  } else {
+    sendToEsp32(state.lastPayload);
+  }
+}
+
+async function testEsp32() {
+  const s = getSettings();
+  const el = document.getElementById('esp32Status');
+
+  try {
+    const response = await fetch(s.esp32Url + '/api/alert', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        to: TARGET_USER_ID,
-        messages: [
-          {
-            type: 'text',
-            text: messageText
-          }
-        ]
+        fire:false,
+        distance_km:null,
+        lat:null,
+        lng:null,
+        source:'ESP32_TEST',
+        radius_km:s.radius
       })
     });
 
-    if (response.ok) {
-      console.log('ส่งแจ้งเตือนเข้า LINE สำเร็จ!');
-    }
-  } catch (error) {
-    console.error('เกิดข้อผิดพลาด:', error);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    el.textContent = '✅ ESP32 ตอบกลับแล้ว';
+    log('ทดสอบ ESP32 สำเร็จ');
+  } catch (err) {
+    el.textContent = '❌ ติดต่อ ESP32 ไม่สำเร็จ: ' + err.message;
+    log('ESP32 Error: ' + err.message);
   }
 }
-// ตัวอย่างการเรียกใช้: เมื่อมีเหตุการณ์บนเว็บ ให้เรียกฟังก์ชันนี้
-sendLineNotification('🔔 มีกิจกรรมใหม่เกิดขึ้นบนเว็บไซต์ CRMS6!');
-  </script>
+
+function simulateFire() {
+  const s = getSettings();
+
+  // จุดจำลองประมาณ 2 กม. ทางทิศตะวันออกเฉียงเหนือ
+  const demoLat = s.lat + 0.012;
+  const demoLng = s.lng + 0.012;
+
+  state.simulation = true;
+  state.fires = [{
+    id:'DEMO_FIRE_001',
+    lat:demoLat,
+    lng:demoLng,
+    date:new Date().toISOString().slice(0,10),
+    time:new Date().toTimeString().slice(0,5),
+    province:'ข้อมูลจำลอง',
+    amphoe:'DEMO',
+    tambon:'DEMO',
+    frp:999,
+    brightness:350,
+    source:'DEMO'
+  }];
+
+  evaluateAndDisplay();
+  log('เปิดโหมดจำลอง: พบไฟป่าใกล้บอร์ด');
+}
+
+function clearSimulation() {
+  state.simulation = false;
+  state.fires = [];
+  evaluateAndDisplay();
+  log('ยกเลิกโหมดจำลองแล้ว');
+}
+
+updateMap();
+log('ระบบพร้อมใช้งาน');
+</script>
 </body>
 </html>
