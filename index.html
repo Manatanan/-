@@ -849,10 +849,10 @@ function confirmWfEvent(isReal) {
       filterContacts();
     };
     // นำ Token ที่ได้จาก LINE Developers มาใส่ตรงนี้
-const CHANNEL_ACCESS_TOKEN = '@147xmfnj';
+const CHANNEL_ACCESS_TOKEN = 'RUBd8/9caUrogxWv1jowOk2rmjYKlnTy7qCq+kU+K3a9UCJTNNQahfO1i7R6t67Oyi48E6tYDLRoeGgYdTVRIgFDd11rygmiGV1nlXA2SLTBYy51Ys2oYTuSR/XbCvdMfr3waP5KKZuqoHPt58v5DAdB04t89/1O/w1cDnyilFU=';
 
 // ใส่ User ID ของคุณ (ดูได้ในหน้า LINE Developers แท็บ Messaging API ตรงหัวข้อ Your user ID)
-const TARGET_USER_ID = '2011402389';
+const TARGET_USER_ID = 'U45e1158b2e7ef0508e59a88521e1f34b';
 
 async function sendLineNotification(messageText) {
   try {
@@ -880,7 +880,6 @@ async function sendLineNotification(messageText) {
     console.error('เกิดข้อผิดพลาด:', error);
   }
 }
-
 // ตัวอย่างการเรียกใช้: เมื่อมีเหตุการณ์บนเว็บ ให้เรียกฟังก์ชันนี้
 sendLineNotification('🔔 มีกิจกรรมใหม่เกิดขึ้นบนเว็บไซต์ CRMS6!');
   </script>
