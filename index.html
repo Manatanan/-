@@ -848,6 +848,41 @@ function confirmWfEvent(isReal) {
       fetchGistdaFireData();
       filterContacts();
     };
+    // นำ Token ที่ได้จาก LINE Developers มาใส่ตรงนี้
+const CHANNEL_ACCESS_TOKEN = '@147xmfnj';
+
+// ใส่ User ID ของคุณ (ดูได้ในหน้า LINE Developers แท็บ Messaging API ตรงหัวข้อ Your user ID)
+const TARGET_USER_ID = '2011402389';
+
+async function sendLineNotification(messageText) {
+  try {
+    const response = await fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CHANNEL_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify({
+        to: TARGET_USER_ID,
+        messages: [
+          {
+            type: 'text',
+            text: messageText
+          }
+        ]
+      })
+    });
+
+    if (response.ok) {
+      console.log('ส่งแจ้งเตือนเข้า LINE สำเร็จ!');
+    }
+  } catch (error) {
+    console.error('เกิดข้อผิดพลาด:', error);
+  }
+}
+
+// ตัวอย่างการเรียกใช้: เมื่อมีเหตุการณ์บนเว็บ ให้เรียกฟังก์ชันนี้
+sendLineNotification('🔔 มีกิจกรรมใหม่เกิดขึ้นบนเว็บไซต์ CRMS6!');
   </script>
 </body>
 </html>
