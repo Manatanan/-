@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบแจ้งเตือนไฟป่า | GISTDA + ESP32</title>
 
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhINfQ3qV8m5M1v2NxYkjJ9J3K2f4M="
-      crossorigin=""/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 *{box-sizing:border-box}
@@ -104,9 +101,16 @@ button.demo{background:#c77700}
 .kpi b{display:block;font-size:20px;margin-top:3px}
 
 #map{
-  height:520px;
-  width:100%;
-  border-radius:12px;
+    height:520px;
+    width:100%;
+    position:relative;
+    overflow:hidden;
+    border-radius:12px;
+}
+
+.leaflet-container{
+    width:100%;
+    height:100%;
 }
 .map-card{padding-bottom:10px}
 
