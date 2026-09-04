@@ -364,8 +364,7 @@ pre{
 </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 /* =========================================================
@@ -658,6 +657,8 @@ async function loadGistdaData(){
 
     evaluateAlert();
 
+    sendCurrentToEsp32();
+        
     log(
       "ดึงข้อมูลสำเร็จ: " +
       events.length +
@@ -1116,14 +1117,13 @@ async function testEsp32(){
 function demoFire(){
 
   const offsetLat =
-    CONFIG.demoDistanceKm / 111;
+  CONFIG.demoDistanceKm / 111.32;
 
-  const demoLat =
-    boardLat + offsetLat;
+const demoLat =
+  boardLat + offsetLat;
 
-  const demoLng =
-    boardLng + offsetLat / 2;
-
+const demoLng =
+  boardLng;
   fireEvents = [
     {
       id:"DEMO-001",
