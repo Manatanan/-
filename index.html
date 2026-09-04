@@ -6,9 +6,7 @@
 <title>ระบบแจ้งเตือนไฟป่า | GISTDA + ESP32</title>
 
 <link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhINfQ3qV8m5M1v2NxYkjJ9J3K2f4M="
-      crossorigin=""/>
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 *{box-sizing:border-box}
@@ -40,9 +38,7 @@ header p{margin:6px 0 0;font-size:13px;opacity:.9}
   gap:16px;
   width:100%;
 }
-.grid > div{
-  min-width:0;
-}
+.grid > div{min-width:0}
 .card{
   background:#fff;
   border-radius:14px;
@@ -127,10 +123,7 @@ button.demo{background:#c77700}
   max-width:100%;
   overflow:hidden;
 }
-.map-card{
-  padding-bottom:10px;
-  min-width:0;
-}
+.map-card{padding-bottom:10px;min-width:0}
 
 table{
   width:100%;
@@ -190,24 +183,10 @@ pre{
 .blue{background:#2878d7}
 
 @media(max-width:900px){
-  .grid{
-    grid-template-columns:minmax(0,1fr);
-  }
-
-  .container{
-    width:100%;
-    max-width:100%;
-  }
-
-  #map{
-    height:420px;
-  }
-
-  table{
-    display:block;
-    width:100%;
-    overflow-x:auto;
-  }
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .container{width:100%;max-width:100%}
+  #map{height:420px}
+  table{display:block;width:100%;overflow-x:auto}
 }
 </style>
 </head>
@@ -1151,13 +1130,13 @@ async function testEsp32(){
 function demoFire(){
 
   const offsetLat =
-    CONFIG.demoDistanceKm / 111;
+    CONFIG.demoDistanceKm / 111.32;
 
   const demoLat =
     boardLat + offsetLat;
 
   const demoLng =
-    boardLng + offsetLat / 2;
+    boardLng;
 
   fireEvents = [
     {
