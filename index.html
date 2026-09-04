@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบแจ้งเตือนไฟป่า | GISTDA + ESP32</title>
 
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 *{box-sizing:border-box}
@@ -15,7 +14,6 @@ body{
   font-family:Arial,"Noto Sans Thai",sans-serif;
   background:#f4f7f5;
   color:#17221b;
-  overflow-x:hidden;
 }
 header{
   background:#174d35;
@@ -28,26 +26,20 @@ header p{margin:6px 0 0;font-size:13px;opacity:.9}
 
 .container{
   max-width:1250px;
-  width:100%;
   margin:18px auto;
   padding:0 12px;
 }
 .grid{
   display:grid;
-  grid-template-columns:minmax(0,360px) minmax(0,1fr);
+  grid-template-columns:360px 1fr;
   gap:16px;
-  width:100%;
 }
-.grid > div{min-width:0}
 .card{
   background:#fff;
   border-radius:14px;
   padding:16px;
   box-shadow:0 2px 10px rgba(0,0,0,.08);
   margin-bottom:16px;
-  min-width:0;
-  max-width:100%;
-  overflow:hidden;
 }
 .card h2{
   font-size:18px;
@@ -61,7 +53,6 @@ label{
 }
 input,select,button{
   width:100%;
-  max-width:100%;
   padding:10px;
   border:1px solid #cbd5ce;
   border-radius:8px;
@@ -112,22 +103,12 @@ button.demo{background:#c77700}
 #map{
   height:520px;
   width:100%;
-  max-width:100%;
   border-radius:12px;
-  position:relative;
-  overflow:hidden;
 }
-.leaflet-container{
-  width:100% !important;
-  height:100% !important;
-  max-width:100%;
-  overflow:hidden;
-}
-.map-card{padding-bottom:10px;min-width:0}
+.map-card{padding-bottom:10px}
 
 table{
   width:100%;
-  min-width:0;
   border-collapse:collapse;
   font-size:13px;
 }
@@ -183,11 +164,21 @@ pre{
 .blue{background:#2878d7}
 
 @media(max-width:900px){
-  .grid{grid-template-columns:minmax(0,1fr)}
-  .container{width:100%;max-width:100%}
+  .grid{grid-template-columns:1fr}
   #map{height:420px}
-  table{display:block;width:100%;overflow-x:auto}
 }
+
+html,body{max-width:100%;overflow-x:hidden;}
+body{width:100%;}
+.container{width:100%;max-width:1250px;min-width:0;}
+.grid{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:16px;width:100%;min-width:0;}
+.grid>div{min-width:0;}
+.card{min-width:0;max-width:100%;overflow:hidden;}
+input,select,button{max-width:100%;min-width:0;}
+#map{max-width:100%;overflow:hidden;}
+.leaflet-container{width:100%!important;max-width:100%;height:100%;overflow:hidden;}
+.table-wrap{width:100%;max-width:100%;overflow-x:auto;}
+.table-wrap table{width:100%;min-width:650px;}
 </style>
 </head>
 
@@ -341,7 +332,7 @@ pre{
   <div class="card">
     <h2>🔥 รายการจุดไฟป่า</h2>
 
-    <table>
+    <div class="table-wrap"><table>
       <thead>
         <tr>
           <th>สถานะ</th>
@@ -359,7 +350,7 @@ pre{
           <td colspan="7">ยังไม่มีข้อมูล</td>
         </tr>
       </tbody>
-    </table>
+    </table></div>
   </div>
 
   <div class="card">
@@ -1129,14 +1120,12 @@ async function testEsp32(){
 
 function demoFire(){
 
-  const offsetLat =
-    CONFIG.demoDistanceKm / 111.32;
+  const offsetLat = CONFIG.demoDistanceKm / 111.32;
 
   const demoLat =
     boardLat + offsetLat;
 
-  const demoLng =
-    boardLng;
+  const demoLng = boardLng;
 
   fireEvents = [
     {
@@ -1241,6 +1230,7 @@ window.addEventListener(
   "DOMContentLoaded",
   ()=>{
     initMap();
+  setTimeout(()=>{ if(map) map.invalidateSize(); },300);
 
     setAlertState(
       false,
